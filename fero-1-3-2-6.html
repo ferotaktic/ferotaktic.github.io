@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tanrının Cezası Fero'nun Taktiği</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #1e1e1e;
+        color: white;
+        text-align: center;
+        padding: 20px;
+        transition: background-color 0.3s, color 0.3s;
+        position: relative;
+        min-height: 100vh;
+        padding-bottom: 80px;
+    }
+    .light-mode {
+        background-color: #f4f4f4;
+        color: #333;
+    }
+    .container {
+        background: rgba(255,255,255,0.05);
+        padding: 20px;
+        border-radius: 15px;
+        max-width: 500px;
+        margin: auto;
+    }
+    .light-mode .container {
+        background: rgba(0,0,0,0.05);
+    }
+    .title {
+        font-size: 22px;
+        font-weight: bold;
+        color: gold;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+    input {
+        padding: 10px;
+        font-size: 16px;
+        border-radius: 8px;
+        border: none;
+        margin-bottom: 10px;
+        text-align: center;
+        width: 80%;
+    }
+    button {
+        padding: 10px 20px;
+        font-size: 16px;
+        border-radius: 8px;
+        border: none;
+        cursor: pointer;
+        margin: 5px;
+        transition: 0.3s;
+    }
+    .gold-btn {
+        background: linear-gradient(45deg, #f1c40f, #f39c12);
+        color: black;
+        font-weight: bold;
+        box-shadow: 0 4px 0 #b9770e;
+    }
+    .gold-btn:hover {
+        transform: scale(1.05);
+    }
+    .dice-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin: 15px 0;
+    }
+    .dice-btn {
+        background: #444;
+        color: white;
+        font-size: 18px;
+        font-weight: bold;
+    }
+    .light-mode .dice-btn {
+        background: #ddd;
+        color: black;
+    }
+    .dice-btn:hover {
+        background: #666;
+    }
+    .light-mode .dice-btn:hover {
+        background: #bbb;
+    }
+    .reset-btn {
+        background: #e74c3c;
+        color: white;
+    }
+    .history {
+        margin-top: 20px;
+        font-size: 14px;
+        text-align: left;
+        background: rgba(255,255,255,0.05);
+        padding: 10px;
+        border-radius: 8px;
+        max-height: 150px;
+        overflow-y: auto;
+    }
+    .light-mode .history {
+        background: rgba(0,0,0,0.05);
+    }
+    .info-box {
+        background: rgba(255,255,255,0.05);
+        padding: 10px;
+        margin-top: 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        text-align: left;
+    }
+    .light-mode .info-box {
+        background: rgba(0,0,0,0.05);
+    }
+    .bank {
+        font-size: 18px;
+        font-weight: bold;
+        margin-bottom: 10px;
+        color: #2ecc71;
+    }
+    .light-mode .bank {
+        color: #27ae60;
+    }
+    .dice-title {
+        font-weight: bold;
+        margin-top: 15px;
+        font-size: 16px;
+        text-align: center;
+    }
+    .footer-box {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background: rgba(255,255,255,0.05);
+        padding: 10px;
+        font-size: 12px;
+        text-align: center;
+        border-top: 1px solid rgba(255,255,255,0.1);
+    }
+    .light-mode .footer-box {
+        background: rgba(0,0,0,0.05);
+    }
+    .mode-btn {
+        background: #3498db;
+        color: white;
+        font-size: 12px;
+        padding: 5px 10px;
+        border-radius: 5px;
+        position: absolute;
+        right: 10px;
+        bottom: 10px;
+    }
+    .result-box {
+        padding: 10px;
+        margin-top: 15px;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 16px;
+    }
+    .win {
+        background: #27ae60;
+        color: white;
+    }
+    .lose {
+        background: #e74c3c;
+        color: white;
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <div class="title">🔥 Tanrının Cezası Fero'nun Taktiği 🔥</div>
+        <div class="bank" id="bankDisplay">Kasa: ₺0</div>
+
+        <input type="number" id="bankInput" placeholder="Başlangıç Kasası (₺)" min="1">
+        <button class="gold-btn" onclick="setBank()">💰 Kasa Başlat</button>
+        <div id="betSuggestion"></div>
+
+        <input type="number" id="baseBet" placeholder="Bahis Miktarı (₺)" min="1">
+
+        <div class="dice-title">🎲 Zar Sonucunu Seç</div>
+        <div class="dice-grid">
+            <button class="dice-btn" onclick="playRound(1)">1</button>
+            <button class="dice-btn" onclick="playRound(2)">2</button>
+            <button class="dice-btn" onclick="playRound(3)">3</button>
+            <button class="dice-btn" onclick="playRound(4)">4</button>
+            <button class="dice-btn" onclick="playRound(5)">5</button>
+            <button class="dice-btn" onclick="playRound(6)">6</button>
+        </div>
+
+        <div class="result-box" id="output">Başlamak için kasa gir.</div>
+        <button class="reset-btn" onclick="resetGame()">🔄 Yeniden Başla</button>
+
+        <div class="history" id="history">
+            <strong>Oyun Geçmişi:</strong><br>
+        </div>
+
+        <div class="info-box">
+            <strong>ℹ️ 1-3-2-6 Taktiği Nedir?</strong><br>
+            Bu stratejide seri halinde 4 adım oynanır: <br>
+            1️⃣ İlk adımda 1 birim bahis. <br>
+            2️⃣ Kazanırsan ikinci adımda 3 birim. <br>
+            3️⃣ Kazanırsan üçüncü adımda 2 birim. <br>
+            4️⃣ Kazanırsan dördüncü adımda 6 birim. <br>
+            Kaybedersen seri başa döner. Biz burada 3.5 ÜST oynuyoruz, yani zar 4, 5 veya 6 gelirse kazanıyoruz.
+        </div>
+    </div>
+
+    <div class="footer-box">
+        © 2025 Fero | Tüm hakları saklıdır. <br>
+        Kumarı sorumlu oynayın. Bu taktik en az kayıpla para kazanmayı amaçlar.
+    </div>
+
+    <button class="mode-btn" onclick="toggleMode()">🌙 Mod</button>
+
+<script>
+    let sequence = [1, 3, 2, 6];
+    let step = 0;
+    let historyLog = [];
+    let bank = 0;
+    let initialBank = 0;
+    let darkMode = true; // varsayılan olarak karanlık mod
+
+    function setBank() {
+        bank = parseFloat(document.getElementById('bankInput').value);
+        initialBank = bank;
+
+        if (isNaN(bank) || bank <= 0) {
+            alert("Geçerli bir kasa miktarı gir!");
+            return;
+        }
+
+        document.getElementById('bankDisplay').innerHTML = `Kasa: ₺${bank}`;
+        showBaseBetSuggestion();
+        document.getElementById('output').innerHTML = "Kasa ayarlandı. Zar seç ve oyna!";
+        document.getElementById('output').className = "result-box";
+    }
+
+    function showBaseBetSuggestion() {
+        let suggested = 10;
+        if (bank <= 1000) suggested = 10;
+        else if (bank <= 2000) suggested = 20;
+        else if (bank <= 3000) suggested = 30;
+        else if (bank <= 5000) suggested = 50;
+        else if (bank <= 10000) suggested = 100;
+        else if (bank <= 20000) suggested = 200;
+
+        document.getElementById('betSuggestion').innerHTML = `💡 Önerilen başlangıç bahsi: ₺${suggested}`;
+    }
+
+    function playRound(diceValue) {
+        let baseBet = parseFloat(document.getElementById('baseBet').value);
+        let output = document.getElementById('output');
+        let history = document.getElementById('history');
+
+        if (isNaN(baseBet) || baseBet <= 0) {
+            output.innerHTML = "⚠️ Geçerli bir bahis gir.";
+            output.className = "result-box lose";
+            return;
+        }
+        if (bank <= 0) {
+            output.innerHTML = "💸 Kasan bitti! Yeniden başla.";
+            output.className = "result-box lose";
+            return;
+        }
+
+        let betAmount = sequence[step] * baseBet;
+        let win = diceValue > 3; 
+        let change = 0;
+
+        if (win) {
+            change = betAmount;
+            bank += change;
+            historyLog.push(`+ ₺${betAmount} Kazandın (Zar: ${diceValue}, Adım ${sequence[step]})`);
+            step++;
+            if (step >= sequence.length) {
+                output.innerHTML = `🎯 Seri tamamlandı! Tekrar ₺${sequence[0] * baseBet} ile başla.`;
+                step = 0;
+            } else {
+                output.innerHTML = `✅ Kazandın! Şimdi ₺${sequence[step] * baseBet} oyna.`;
+            }
+            output.className = "result-box win";
+        } else {
+            change = -betAmount;
+            bank += change;
+            historyLog.push(`- ₺${betAmount} Kaybettin (Zar: ${diceValue}, Adım ${sequence[step]})`);
+            step = 0;
+            output.innerHTML = `❌ Kaybettin! Tekrar ₺${sequence[0] * baseBet} oyna.`;
+            output.className = "result-box lose";
+        }
+
+        let profit = bank - initialBank;
+        let profitText = profit >= 0 ? `💰 Kâr: ₺${profit}` : `📉 Zarar: ₺${profit}`;
+        document.getElementById('bankDisplay').innerHTML = `Kasa: ₺${bank} (${profitText})`;
+
+        history.innerHTML = "<strong>Oyun Geçmişi:</strong><br>" + historyLog.join("<br>");
+    }
+
+    function resetGame() {
+        step = 0;
+        historyLog = [];
+        bank = initialBank;
+        document.getElementById('output').innerHTML = "Başlamak için kasa gir.";
+        document.getElementById('output').className = "result-box";
+        document.getElementById('history').innerHTML = "<strong>Oyun Geçmişi:</strong><br>";
+        document.getElementById('bankDisplay').innerHTML = `Kasa: ₺${bank}`;
+    }
+
+    function toggleMode() {
+        document.body.classList.toggle("light-mode");
+    }
+</script>
+</body>
+</html>
