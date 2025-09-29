@@ -22,8 +22,8 @@ body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;
 .btn{cursor:pointer;font-weight:800;border:none;border-radius:12px;padding:10px 16px;background:var(--btn-grad);color:#051025;transition:transform .14s,opacity .14s}
 .btn:hover{transform:translateY(-3px);opacity:.95}
 .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.06);color:var(--text)}
-.seq{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-.chip{min-width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;font-weight:700}
+.seq{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip{width:32px;height:32px;border-radius:6px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0}
 .actions{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
 .small{font-size:13px;color:var(--muted)}
 .table-wrap{overflow:auto;margin-top:12px}
@@ -46,20 +46,27 @@ th{font-size:12px;color:var(--muted)}
       <div class="field" style="align-items:center;">
         <label class="label">Kasa:</label>
         <input id="inpKasa" class="input" type="number" value="5000" />
-        <label class="label">Adımlar:</label>
-        <input id="inpAdimlar" class="input" type="text" value="1,2,3,4" />
+      </div>
+      <div class="field" style="align-items:center;">
+        <label class="label">Adım Sayısı:</label>
+        <input id="inpAdimSayisi" class="input" type="number" value="10" />
+      </div>
+      <div class="field" style="align-items:center;">
+        <label class="label">Her Adım TL:</label>
+        <input id="inpAdimTl" class="input" type="number" value="20" />
+      </div>
+      <div class="field" style="align-items:center;">
         <label class="label">Oran:</label>
         <select id="selOran" class="input">
           <option value="1.9">1.9</option>
           <option value="2.0">2.0</option>
         </select>
       </div>
-
       <div style="margin-top:12px" class="field">
         <button id="btnBaslat" class="btn">Başlat</button>
         <button id="btnSifirla" class="btn">Sıfırla</button>
       </div>
-      <div class="small" style="margin-top:8px">Not: Adımları virgülle ayır (örn. <code>5,10,15</code>). Oran seçimi kazançta kullanılacak (1.9 veya 2.0).</div>
+      <div class="small" style="margin-top:8px">Not: Adım sayısı ve her adımın TL değerini girin. Tamam deyince sıra oluşturulacak.</div>
     </div>
 
     <!-- Sistem -->
@@ -94,15 +101,14 @@ th{font-size:12px;color:var(--muted)}
 
 <script>
 (() => {
-  // state
   let kasa = 5000;
-  let sequence = [20,20,20,20,20,20,20,20,20,20];
+  let sequence = [];
   let oran = 1.9;
   let elSayisi = 0;
 
-  // elements
   const inpKasa = document.getElementById('inpKasa');
-  const inpAdimlar = document.getElementById('inpAdimlar');
+  const inpAdimSayisi = document.getElementById('inpAdimSayisi');
+  const inpAdimTl = document.getElementById('inpAdimTl');
   const selOran = document.getElementById('selOran');
   const btnBaslat = document.getElementById('btnBaslat');
   const btnSifirla = document.getElementById('btnSifirla');
@@ -112,14 +118,6 @@ th{font-size:12px;color:var(--muted)}
   const mevcutKasaEl = document.getElementById('mevcutKasa');
   const siradakiBahisEl = document.getElementById('siradakiBahis');
   const gecmisTbody = document.getElementById('gecmis');
-
-  // helpers
-  function parseSequenceInput(text){
-    return text.split(',').map(s => {
-      const n = parseFloat(s.trim());
-      return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
-    }).filter(x => x !== null);
-  }
 
   function siradakiBahis(){
     if(sequence.length === 0) return 0;
@@ -131,7 +129,6 @@ th{font-size:12px;color:var(--muted)}
     mevcutKasaEl.textContent = kasa.toFixed(2) + ' TL';
     const bahis = siradakiBahis();
     siradakiBahisEl.textContent = bahis > 0 ? bahis + ' TL' : '—';
-    // render sequence
     seqDiv.innerHTML = '';
     if(sequence.length === 0){
       const done = document.createElement('div');
@@ -146,7 +143,6 @@ th{font-size:12px;color:var(--muted)}
         seqDiv.appendChild(d);
       });
     }
-    // enable/disable buttons
     const disable = (siradakiBahis() === 0);
     btnKazanc.disabled = disable;
     btnKayip.disabled = disable;
@@ -164,31 +160,24 @@ th{font-size:12px;color:var(--muted)}
                     <td>${bahis} TL</td>
                     <td>${sonuc} ${sonucBadge}</td>
                     <td>${kasa.toFixed(2)} TL</td>`;
-    // prepend
     if(gecmisTbody.firstChild) gecmisTbody.insertBefore(tr, gecmisTbody.firstChild);
     else gecmisTbody.appendChild(tr);
   }
 
-  // actions
   function baslat(){
     const k = parseFloat(inpKasa.value);
-    if(!Number.isFinite(k)){
-      alert('Geçerli bir kasa girin.');
-      return;
-    }
-    const seq = parseSequenceInput(inpAdimlar.value);
-    if(seq.length === 0){
-      alert('Geçerli adımlar girin (örn: 5,10,15).');
-      return;
-    }
+    const adimSayisi = parseInt(inpAdimSayisi.value);
+    const adimTl = parseFloat(inpAdimTl.value);
     const o = parseFloat(selOran.value);
-    if(!Number.isFinite(o) || o <= 1){
-      alert('Geçerli oran seçin.');
-      return;
-    }
+
+    if(!Number.isFinite(k)){ alert('Geçerli bir kasa girin.'); return; }
+    if(!Number.isFinite(adimSayisi) || adimSayisi <= 0){ alert('Geçerli adım sayısı girin.'); return; }
+    if(!Number.isFinite(adimTl) || adimTl <= 0){ alert('Geçerli adım TL girin.'); return; }
+    if(!Number.isFinite(o) || o <= 1){ alert('Geçerli oran seçin.'); return; }
+
     kasa = k;
-    sequence = seq;
     oran = o;
+    sequence = Array(adimSayisi).fill(adimTl);
     elSayisi = 0;
     gecmisTbody.innerHTML = '';
     updateUI();
@@ -196,7 +185,8 @@ th{font-size:12px;color:var(--muted)}
 
   function sifirla(){
     inpKasa.value = 5000;
-    inpAdimlar.value = '1,2,3,4';
+    inpAdimSayisi.value = 10;
+    inpAdimTl.value = 20;
     selOran.value = '1.9';
     baslat();
   }
@@ -206,12 +196,8 @@ th{font-size:12px;color:var(--muted)}
     if(bahis <= 0) return;
     const net = bahis * (oran - 1);
     kasa += net;
-    // remove first and last (or single)
     if(sequence.length === 1) sequence.shift();
-    else {
-      sequence.shift();
-      if(sequence.length > 0) sequence.pop();
-    }
+    else { sequence.shift(); if(sequence.length>0) sequence.pop(); }
     addHistoryRow(bahis, 'Kazanç', net);
     updateUI();
   }
@@ -225,17 +211,11 @@ th{font-size:12px;color:var(--muted)}
     updateUI();
   }
 
-  // wire events
   btnBaslat.addEventListener('click', baslat);
   btnSifirla.addEventListener('click', sifirla);
   btnKazanc.addEventListener('click', kazandik);
   btnKayip.addEventListener('click', kaybettik);
 
-  // init
-  // set inputs to defaults and initialize UI
-  inpKasa.value = 5000;
-  inpAdimlar.value = '20,20,20,20,20,20,20,20,20,20';
-  selOran.value = '1.9';
   baslat();
 })();
 </script>
