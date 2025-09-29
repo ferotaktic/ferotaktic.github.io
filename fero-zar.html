@@ -2,523 +2,241 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
-<title>Fero Zar — Mobil Akıllı Bahis Asistanı (1.90)</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Lobunachere Fero Taktiği</title>
 <style>
-  :root{
-    --bg:#0b1220; --card:#0f1a2d; --card2:#0b1526; --line:#243453;
-    --acc:#7c5cff; --acc2:#22e3a2; --text:#eaf1ff; --muted:#a7b3d2;
-  }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0; background:linear-gradient(180deg,#09101d,#0b1220);
-    color:var(--text); font:500 15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Helvetica Neue",Arial;
-    -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
-  }
-
-  /* Top Bar */
-  .bar{
-    position:sticky; top:0; z-index:5;
-    display:flex; gap:10px; align-items:center; justify-content:space-between;
-    padding:10px;
-    background:linear-gradient(180deg,#0e1730,#0c1427);
-    border-bottom:1px solid var(--line)
-  }
-  .title{font-weight:900;font-size:16px;display:flex;gap:8px;align-items:center;white-space:nowrap}
-  .pill{
-    padding:6px 10px;border:1px solid var(--line);border-radius:999px;
-    background:linear-gradient(180deg,var(--card),var(--card2));color:var(--muted);font-weight:800
-  }
-  .info{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-  .info .pill{font-size:12px}
-
-  /* Mobile container */
-  .wrap{width:100%;max-width:640px;margin:0 auto;padding:10px}
-  .stack{display:flex;flex-direction:column;gap:10px}
-
-  /* Widgets */
-  .widget{
-    border:1px solid var(--line);border-radius:14px;
-    background:linear-gradient(180deg,rgba(20,32,56,.95),rgba(10,18,34,.92));
-    box-shadow:0 6px 18px rgba(0,0,0,.25);
-    overflow:hidden; width:100%;
-  }
-  .w-head{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:10px;border-bottom:1px dashed var(--line);
-  }
-  .ttl{font-weight:900;font-size:12px;letter-spacing:.5px;color:var(--muted);text-transform:uppercase}
-  .badges{display:flex;gap:6px;flex-wrap:wrap}
-  .badge{border:1px solid var(--line);border-radius:10px;padding:4px 8px;font-weight:800;font-size:12px;white-space:nowrap}
-  .badge.mode{color:#cdb9ff;border-color:#6e5bff;background:linear-gradient(180deg,rgba(124,92,255,.14),rgba(0,0,0,.06))}
-  .badge.alt{color:#f9d36b;border-color:#8a6b1f;background:linear-gradient(180deg,rgba(138,107,31,.15),rgba(0,0,0,.06))}
-  .badge.ust{color:#7fe3ff;border-color:#2b8ea6;background:linear-gradient(180deg,rgba(43,142,166,.18),rgba(0,0,0,.06))}
-  .w-body{padding:10px;display:flex;flex-direction:column;gap:10px;min-width:0}
-  .money{font-size:24px;font-weight:900}
-  .tiny{font-size:12px;color:var(--muted)}
-  .btn{
-    appearance:none;border:1px solid var(--line);border-radius:10px;padding:9px 12px;
-    font-weight:900;background:linear-gradient(180deg,#2a3b66,#202c4d);color:var(--text);cursor:pointer;
-    touch-action:manipulation
-  }
-  .btn.ghost{background:transparent}
-  .pill input{
-    width:92px;max-width:40vw;margin-left:6px;background:transparent;border:1px solid var(--line);
-    border-radius:8px;color:var(--text);padding:6px 8px
-  }
-
-  /* KPIs */
-  .kpis{display:grid;gap:8px;grid-template-columns:repeat(2,1fr)}
-  .kpi{border:1px dashed var(--line);border-radius:12px;padding:8px;background:rgba(0,0,0,.25);min-width:0}
-  .kpi h4{margin:0 0 4px;font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
-  .kpi .v{font-size:18px;font-weight:900;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .kpi .sub{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .progress{height:10px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.06);overflow:hidden}
-  .progress>i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));width:0%}
+:root{
+  --bg:#071022; --card:#0c1830; --muted:#9fb0d9; --text:#e6f0ff;
+  --accent:#7c5cff; --accent2:#22e3a2; --danger:#ff6b6b;
+  --btn-grad: linear-gradient(90deg,var(--accent),var(--accent2));
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Arial;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased}
+.header{padding:14px;text-align:center;background:linear-gradient(180deg,#081329,#06101f);font-weight:800;letter-spacing:.2px;color:var(--accent2);font-size:18px}
+.container{max-width:980px;margin:16px auto;padding:12px}
+.card{background:linear-gradient(180deg, rgba(12,24,48,.9), rgba(8,14,30,.9));border:1px solid rgba(124,92,255,.12);border-radius:12px;padding:16px;margin-bottom:16px}
+.h4{margin:0 0 12px;color:var(--muted);font-size:13px;font-weight:700;text-transform:uppercase}
+.field{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.input, select{background:transparent;border:1px solid rgba(255,255,255,.06);color:var(--text);padding:10px;border-radius:8px;min-width:120px}
+.label{color:var(--muted);font-size:13px;margin-right:6px}
+.btn{cursor:pointer;font-weight:800;border:none;border-radius:12px;padding:10px 16px;background:var(--btn-grad);color:#051025;transition:transform .14s,opacity .14s}
+.btn:hover{transform:translateY(-3px);opacity:.95}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.06);color:var(--text)}
+.seq{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.chip{min-width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;font-weight:700}
+.actions{display:flex;gap:12px;margin-top:12px;flex-wrap:wrap}
+.small{font-size:13px;color:var(--muted)}
+.table-wrap{overflow:auto;margin-top:12px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:8px;border-bottom:1px solid rgba(255,255,255,.03);text-align:center}
+th{font-size:12px;color:var(--muted)}
+.badge-win{color:#042f19;background:linear-gradient(90deg,#7ef0b3,#22e3a2);padding:6px 10px;border-radius:999px;font-weight:800}
+.badge-loss{color:#3b0707;background:linear-gradient(90deg,#ff9a76,#ff6b6b);padding:6px 10px;border-radius:999px;font-weight:800}
+.info-row{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+@media(max-width:740px){ .container{padding:10px} .card{padding:12px} .header{font-size:16px} }
 </style>
 </head>
 <body>
-  <div class="bar">
-    <div class="title">🎲 Fero Zar</div>
-    <div class="info">
-      <span class="pill">Mobil</span>
-      <span class="pill">Oran: <b id="oddsLabel">1.90</b></span>
-      <span class="pill">ALT: 1–2–3</span>
-      <span class="pill">ÜST: 4–5–6</span>
+  <div class="header">🎲 Lobunachere Fero Taktiği</div>
+
+  <div class="container">
+    <!-- Ayarlar -->
+    <div class="card">
+      <div class="h4">Ayarlar</div>
+      <div class="field" style="align-items:center;">
+        <label class="label">Kasa:</label>
+        <input id="inpKasa" class="input" type="number" value="5000" />
+        <label class="label">Adımlar:</label>
+        <input id="inpAdimlar" class="input" type="text" value="1,2,3,4" />
+        <label class="label">Oran:</label>
+        <select id="selOran" class="input">
+          <option value="1.9">1.9</option>
+          <option value="2.0">2.0</option>
+        </select>
+      </div>
+
+      <div style="margin-top:12px" class="field">
+        <button id="btnBaslat" class="btn">Başlat</button>
+        <button id="btnSifirla" class="btn">Sıfırla</button>
+      </div>
+      <div class="small" style="margin-top:8px">Not: Adımları virgülle ayır (örn. <code>5,10,15</code>). Oran seçimi kazançta kullanılacak (1.9 veya 2.0).</div>
     </div>
-  </div>
 
-  <div class="wrap">
-    <div class="stack">
-      <!-- 1) KPIs -->
-      <section class="widget" id="w-kpis">
-        <div class="w-head">
-          <span class="ttl">KPI’lar</span>
-          <div class="badges"><span class="badge" id="pnlBadge">+0 TL</span></div>
-        </div>
-        <div class="w-body">
-          <div class="kpis">
-            <div class="kpi">
-              <h4>Kasa</h4>
-              <div class="v money"><span id="bankroll">5000</span> TL</div>
-              <div class="sub">Başlangıç: <span id="startBank">5000</span> TL</div>
-            </div>
-            <div class="kpi">
-              <h4>Mevcut Strateji</h4>
-              <div class="v"><span id="modeText">D’Alembert</span></div>
-              <div class="sub">Temel bahis: <b id="baseBet">50</b> TL</div>
-            </div>
-            <div class="kpi">
-              <h4>Sıradaki Bahis</h4>
-              <div class="v"><span id="nextStake">50</span> TL <span id="nextSideBadge" class="badge alt">ALT</span></div>
-              <div class="sub">Güvenlik limiti: <span id="capPct">20%</span></div>
-            </div>
-            <div class="kpi">
-              <h4>Kâr / Zarar</h4>
-              <div class="v" id="pnl">+0 TL</div>
-              <div class="sub">Toplam el: <span id="hands">0</span> • WinRate: <span id="wr">0%</span></div>
-            </div>
-            <div class="kpi">
-              <h4>Martingale Uzaklık</h4>
-              <div class="progress"><i id="mProg"></i></div>
-              <div class="sub" id="mText" style="font-family:ui-monospace,monospace">0/6 kayıp</div>
-            </div>
-            <div class="kpi">
-              <h4>D’Alembert Uzaklık</h4>
-              <div class="progress"><i id="dProg"></i></div>
-              <div class="sub" id="dText" style="font-family:ui-monospace,monospace">Hâlihazırda D’Alembert</div>
-            </div>
-            <div class="kpi">
-              <h4>Aktif Seri</h4>
-              <div class="v" id="streakText">—</div>
-              <div class="sub">Son 8: ALT/ÜST = <span id="distText">0 / 0</span></div>
-            </div>
-            <div class="kpi">
-              <h4>Uyarı</h4>
-              <div class="v tiny" id="warn">—</div>
-              <div class="sub">1.90 oranda net kâr = bahis × 0.90</div>
-            </div>
-          </div>
-        </div>
-      </section>
+    <!-- Sistem -->
+    <div class="card">
+      <div class="h4">Sistem</div>
+      <div class="info-row">
+        <div><span class="small">Mevcut Kasa:</span> <div style="font-weight:800;margin-top:6px" id="mevcutKasa">-</div></div>
+        <div><span class="small">Sıradaki Bahis:</span> <div style="font-weight:800;margin-top:6px" id="siradakiBahis">-</div></div>
+      </div>
 
-      <!-- 2) SONUCU GİR -->
-      <section class="widget" id="w-dice">
-        <div class="w-head">
-          <span class="ttl">Sonucu Gir (Gelen Zar)</span>
-          <div class="badges"><span class="badge">Tek Dokunuş</span></div>
-        </div>
-        <div class="w-body">
-          <div class="dice" id="diceBox" style="display:grid;gap:8px;grid-template-columns:repeat(3,1fr)">
-            <button type="button" class="d alt" data-die="1" style="-webkit-tap-highlight-color:transparent;touch-action:manipulation;border:1px solid var(--line);border-radius:12px;padding:12px 6px;font-weight:900;font-size:18px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.03))">1<small style="display:block;font-size:10px;color:var(--muted)">ALT</small></button>
-            <button type="button" class="d alt" data-die="2" style="-webkit-tap-highlight-color:transparent;touch-action:manipulation;border:1px solid var(--line);border-radius:12px;padding:12px 6px;font-weight:900;font-size:18px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.03))">2<small style="display:block;font-size:10px;color:var(--muted)">ALT</small></button>
-            <button type="button" class="d alt" data-die="3" style="-webkit-tap-highlight-color:transparent;touch-action:manipulation;border:1px solid var(--line);border-radius:12px;padding:12px 6px;font-weight:900;font-size:18px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.03))">3<small style="display:block;font-size:10px;color:var(--muted)">ALT</small></button>
-            <button type="button" class="d ust" data-die="4" style="-webkit-tap-highlight-color:transparent;touch-action:manipulation;border:1px solid var(--line);border-radius:12px;padding:12px 6px;font-weight:900;font-size:18px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.03))">4<small style="display:block;font-size:10px;color:var(--muted)">ÜST</small></button>
-            <button type="button" class="d ust" data-die="5" style="-webkit-tap-highlight-color:transparent;touch-action:manipulation;border:1px solid var(--line);border-radius:12px;padding:12px 6px;font-weight:900;font-size:18px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.03))">5<small style="display:block;font-size:10px;color:var(--muted)">ÜST</small></button>
-            <button type="button" class="d ust" data-die="6" style="-webkit-tap-highlight-color:transparent;touch-action:manipulation;border:1px solid var(--line);border-radius:12px;padding:12px 6px;font-weight:900;font-size:18px;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.03))">6<small style="display:block;font-size:10px;color:var(--muted)">ÜST</small></button>
-          </div>
-          <div class="tiny">Zara dokun → mevcut bahsi sonuçlandır ve yeni öneriyi üret.</div>
-        </div>
-      </section>
+      <div class="seq" id="sequence"></div>
 
-      <!-- 3) BAHİS ÖNERİSİ -->
-      <section class="widget" id="w-next">
-        <div class="w-head">
-          <span class="ttl">Bahis Önerisi (Bir Sonraki El)</span>
-          <div class="badges"><span class="badge mode" id="uiMode">D’Alembert</span><span class="badge alt" id="uiSide">ALT</span></div>
-        </div>
-        <div class="w-body">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
-            <div class="money"><span id="uiStake">50</span> TL</div>
-            <div class="tiny">Analiz: <span id="explain">Başlangıç.</span></div>
-          </div>
-          <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
-            <label class="pill">Kasa: <input id="bankIn" type="number" value="5000"></label>
-            <label class="pill">Temel: <input id="baseIn" type="number" value="50"></label>
-            <label class="pill">Güv%: <input id="capIn" type="number" value="20" title="Maks bahis = Kasa × bu yüzde"></label>
-            <label class="pill">Oran: <input id="oddsIn" type="number" step="0.01" value="1.90"></label>
-            <label class="pill">M-eşiği: <input id="thrIn" type="number" value="6" title="Kaç ardışık kayıpta Martingale'e geçilecek"></label>
-            <button class="btn" id="apply" type="button">Uygula</button>
-            <button class="btn" id="undo" type="button">Geri Al</button>
-            <button class="btn" id="reset" type="button">Sıfırla</button>
-          </div>
-        </div>
-      </section>
+      <div class="actions">
+        <button id="btnKazanc" class="btn">Kazanç</button>
+        <button id="btnKayip" class="btn">Kayıp</button>
+      </div>
+    </div>
+
+    <!-- Geçmiş -->
+    <div class="card">
+      <div class="h4">Geçmiş Eller</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>El</th><th>Bahis</th><th>Sonuç</th><th>Kasa</th></tr>
+          </thead>
+          <tbody id="gecmis"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
 <script>
-(function(){
-  const $ = s=>document.querySelector(s);
+(() => {
+  // state
+  let kasa = 5000;
+  let sequence = [20,20,20,20,20,20,20,20,20,20];
+  let oran = 1.9;
+  let elSayisi = 0;
 
-  /* ======= HATA YAKALAMA ======= */
-  window.onerror = function(msg){
-    try{ const warn = $('#warn'); if(warn) warn.textContent = 'Hata: '+(msg||'bilinmiyor'); }catch(e){}
-  };
+  // elements
+  const inpKasa = document.getElementById('inpKasa');
+  const inpAdimlar = document.getElementById('inpAdimlar');
+  const selOran = document.getElementById('selOran');
+  const btnBaslat = document.getElementById('btnBaslat');
+  const btnSifirla = document.getElementById('btnSifirla');
+  const btnKazanc = document.getElementById('btnKazanc');
+  const btnKayip = document.getElementById('btnKayip');
+  const seqDiv = document.getElementById('sequence');
+  const mevcutKasaEl = document.getElementById('mevcutKasa');
+  const siradakiBahisEl = document.getElementById('siradakiBahis');
+  const gecmisTbody = document.getElementById('gecmis');
 
-  /* ===========================
-     OYUN DURUMU & MANTIK (1.90)
-     Hybrid: D’Alembert + Hedefli Martingale
-     - DA: kayıpta +base, kazançta -base
-     - M: tek elde kurtarma hedefi: (toplam kayıp + base kâr) / (odds-1)
-     - M’e geçiş: ardışık kayıp eşiği (varsayılan 6)
-     - M’den çıkış: kazanır kazanmaz DA’ye dönüş
-     - Yan (ALT/ÜST) seçimi: son 8’e göre trend/denge hibriti
-     =========================== */
-  const state = {
-    bankroll: 5000, startBank: 5000, base: 50, capPct: 20, odds: 1.90,
-    mode:'DA', stake:50, nextSide:'ALT',
-    pending:null,
-    consecLoss:0, consecWin:0,
-    lossChain:0, // son kazanıma kadar kayıp toplamı
-    lastSide:null, lastSideStreak:0,
-    hands:0,wins:0,losses:0,
-    sidesWindow:[], // son 8 taraf
-    snapshots:[],   // geri al
-    thrLossToM:6    // M’e geçiş eşiği (kayıp sayısı)
-  };
-
-  const fmt = n => (Math.round(n*100)/100).toLocaleString('tr-TR');
-  const sideOfDie = d => d<=3 ? 'ALT' : 'UST';
-
-  /* ---------- yardımcılar ---------- */
-  function pushSnapshot(){
-    state.snapshots.push(JSON.parse(JSON.stringify({
-      bankroll: state.bankroll, startBank: state.startBank, base: state.base, capPct: state.capPct, odds: state.odds,
-      mode: state.mode, stake: state.stake, nextSide: state.nextSide,
-      pending: state.pending,
-      consecLoss: state.consecLoss, consecWin: state.consecWin,
-      lossChain: state.lossChain, lastSide: state.lastSide, lastSideStreak: state.lastSideStreak,
-      hands: state.hands, wins: state.wins, losses: state.losses,
-      sidesWindow: state.sidesWindow, thrLossToM: state.thrLossToM
-    })));
-    if(state.snapshots.length>120) state.snapshots.shift();
+  // helpers
+  function parseSequenceInput(text){
+    return text.split(',').map(s => {
+      const n = parseFloat(s.trim());
+      return Number.isFinite(n) && n > 0 ? Math.round(n) : null;
+    }).filter(x => x !== null);
   }
 
-  function undo(){
-    if(!state.snapshots.length) return;
-    const prev = state.snapshots.pop();
-    Object.assign(state, prev);
-    render(); saveState();
+  function siradakiBahis(){
+    if(sequence.length === 0) return 0;
+    if(sequence.length === 1) return sequence[0];
+    return sequence[0] + sequence[sequence.length - 1];
   }
 
-  function capStakeRaw(v){
-    const capAbs = Math.max(1, state.bankroll*(state.capPct/100));
-    const capped = Math.min(v, capAbs, state.bankroll); // kasayı aşma
-    // 10’luk yuvarla ama en az 1
-    const rounded = Math.max(1, Math.floor(capped/10)*10);
-    return rounded || 1;
-  }
-
-  function analyzeNextSide(){
-    const sides = state.sidesWindow;
-    const n = sides.length;
-    const streak = state.lastSideStreak, sSide = state.lastSide;
-    const alt = sides.filter(s=>s==='ALT').length, ust = n-alt;
-
-    // Uzun seri → tersine; kısa seri → trende bin
-    if(streak>=4) return sSide==='ALT'?'UST':'ALT';
-    if(streak>=2) return sSide;
-
-    // Denge bozulduysa telafi et
-    if(n>0){
-      if(alt+2<=ust) return 'ALT';
-      if(ust+2<=alt) return 'UST';
-      return sides[n-1] || 'ALT'; // son çıkanın yanında kal
-    }
-    return 'ALT';
-  }
-
-  function updateStreak(side){
-    if(state.lastSide===side) state.lastSideStreak++;
-    else { state.lastSide=side; state.lastSideStreak=1; }
-  }
-  function pushSide(side){
-    state.sidesWindow.push(side);
-    if(state.sidesWindow.length>8) state.sidesWindow.shift();
-  }
-
-  function martingaleTargetStake(lossSum, desiredNet){
-    // net = stake*(odds-1) → stake = (lossSum + desiredNet)/(odds-1)
-    const need = (lossSum + desiredNet) / (state.odds - 1);
-    return Math.ceil(need/10)*10; // yukarı yuvarla (10’luk)
-  }
-
-  function computeNext(outcome){
-    let explain='', nextStake=state.base, nextMode=state.mode;
-
-    if(state.mode==='DA'){
-      // D’Alembert güncelle
-      if(outcome==='LOSS'){
-        nextStake = state.stake + state.base;
-      }else{
-        nextStake = Math.max(state.base, state.stake - state.base);
-      }
-      // M’e geçiş koşulu (SADECE kayıp eşiğine göre)
-      if(state.consecLoss >= state.thrLossToM){
-        nextMode='M';
-        // bir sonraki elde tek atışta kurtarma hedefi: +base kâr
-        const want = state.base;
-        nextStake = martingaleTargetStake(state.lossChain, want);
-        explain='Uzayan kayıp → Martingale’e geçiş';
-      }
-    }else{ // Martingale
-      if(outcome==='WIN'){
-        nextMode='DA';
-        nextStake = state.base;
-        explain='Martingale kazanç → D’Alembert’e dönüş';
-      }else{ // Kayıp → yeni hedefli stake
-        const want = state.base; // her an +base kâr hedefi
-        nextStake = martingaleTargetStake(state.lossChain, want);
-        explain='Martingale kayıp → hedefli artış';
-      }
-    }
-
-    // Kasa/güvenlik sınırı
-    const capped = capStakeRaw(nextStake);
-    if(capped < nextStake){
-      const needTxt = (nextStake - capped).toLocaleString('tr-TR');
-      $('#warn').textContent = `Güvenlik limiti/Kasa kısıtı: öneri ${nextStake} TL → ${capped} TL (−${needTxt})`;
-    }else{
-      $('#warn').textContent = state.mode==='M' ? 'Martingale aktif.' : '—';
-    }
-
-    return {nextStake: capped, nextMode, explain};
-  }
-
-  function settleAndRecommend(die){
-    try{
-      if(state.bankroll<=0){ $('#warn').textContent='Kasa 0 TL. Sıfırla veya kasa ekleyin.'; return; }
-      pushSnapshot();
-
-      const outcomeSide = sideOfDie(+die);
-
-      // O ana ait bahis (pending) yoksa mevcut öneriyi kullan
-      const bet = state.pending || {stake:state.stake, side:state.nextSide, mode:state.mode};
-      const isWin = (bet.side===outcomeSide);
-
-      // Finansal sonuç
-      const net = bet.stake * (state.odds-1);
-      const delta = isWin ? net : -bet.stake;
-      state.bankroll = Math.max(0, state.bankroll + delta);
-
-      // Sayaçlar
-      state.hands++;
-      if(isWin){
-        state.wins++; state.consecWin++; state.consecLoss=0;
-        state.lossChain = 0; // zincir sıfır
-      }else{
-        state.losses++; state.consecLoss++; state.consecWin=0;
-        state.lossChain += bet.stake;
-      }
-
-      // Seri & yan penceresi
-      updateStreak(outcomeSide);
-      pushSide(outcomeSide);
-
-      // Bir sonraki adım (mod/stake/yan)
-      const {nextStake, nextMode, explain} = computeNext(isWin?'WIN':'LOSS');
-      state.mode = nextMode;
-      state.stake = nextStake;
-      const suggestSide = analyzeNextSide();
-      state.nextSide = suggestSide;
-
-      // Yeni tur için pending hazırla
-      state.pending = {stake:state.stake, side:state.nextSide, mode:state.mode};
-
-      // UI
-      $('#explain').textContent = explain || (isWin?'Kazanç sonrası dengeleme.':'Kayıp sonrası basamak.');
-      render();
-      saveState();
-    }catch(err){
-      const warn = $('#warn'); if(warn) warn.textContent = 'İşlem hatası: '+(err.message||err);
-      console.error(err);
-    }
-  }
-
-  /* ---------- render & persist ---------- */
-  function render(){
-    $('#oddsLabel').textContent = state.odds.toFixed(2);
-    $('#bankroll').textContent = fmt(state.bankroll);
-    $('#startBank').textContent = fmt(state.startBank);
-    $('#modeText').textContent = state.mode==='DA'?'D’Alembert':'Martingale';
-    $('#baseBet').textContent = fmt(state.base);
-    $('#capPct').textContent = state.capPct+'%';
-    $('#nextStake').textContent = fmt(state.stake);
-    $('#uiStake').textContent = fmt(state.stake);
-    $('#uiMode').textContent = state.mode==='DA'?'D’Alembert':'Martingale';
-
-    const sideCls = state.nextSide==='ALT'?'badge alt':'badge ust';
-    const nsb = document.getElementById('nextSideBadge');
-    nsb.className = sideCls; nsb.textContent = state.nextSide;
-    const uis = document.getElementById('uiSide');
-    uis.className = sideCls; uis.textContent = state.nextSide;
-
-    const pnl = state.bankroll - state.startBank;
-    const pnlTxt = (pnl>=0?'+':'')+fmt(pnl)+' TL';
-    document.getElementById('pnl').textContent = pnlTxt;
-    document.getElementById('pnlBadge').textContent = pnlTxt;
-    document.getElementById('hands').textContent = state.hands;
-    document.getElementById('wr').textContent = state.hands? Math.round(100*state.wins/state.hands)+'%':'0%';
-    document.getElementById('streakText').textContent = state.lastSide ? `${state.lastSide} × ${state.lastSideStreak}` : '—';
-    const a = state.sidesWindow.filter(s=>s==='ALT').length, u = state.sidesWindow.length-a;
-    document.getElementById('distText').textContent = `${a} / ${u}`;
-
-    // İlerleme göstergeleri
-    if(state.mode==='DA'){
-      const prog = Math.min(100,(state.consecLoss/state.thrLossToM)*100);
-      document.getElementById('mProg').style.width = prog+'%';
-      document.getElementById('mText').textContent = `${state.consecLoss}/${state.thrLossToM} kayıp`;
-      document.getElementById('dProg').style.width='100%';
-      document.getElementById('dText').textContent='Hâlihazırda D’Alembert';
-    }else{
-      document.getElementById('mProg').style.width='100%';
-      document.getElementById('mText').textContent='Martingale aktif';
-      document.getElementById('dProg').style.width = (state.consecWin>0?100:0)+'%';
-      document.getElementById('dText').textContent = `${state.consecWin}/1 kazanç (D’Alembert’e dönüş)`;
-    }
-  }
-
-  function initFromInputs(){
-    const newBank = +document.getElementById('bankIn').value||state.bankroll;
-    const base = Math.max(1, +document.getElementById('baseIn').value||state.base);
-    const cap = Math.max(5, Math.min(100, +document.getElementById('capIn').value||state.capPct));
-    const odds = Math.max(1.01, +document.getElementById('oddsIn').value||state.odds);
-    const thr = Math.max(2, Math.min(10, +document.getElementById('thrIn').value||state.thrLossToM));
-
-    // Kasa güncellemesi: başlangıcı isterseniz reset ile değiştirin
-    state.bankroll = newBank;
-    state.base = base;
-    state.capPct = cap;
-    state.odds = odds;
-    state.thrLossToM = thr;
-
-    // Stake min base’e çek
-    state.stake = Math.max(base, Math.floor(state.stake/10)*10 || base);
-
-    // UI
-    render();
-    saveState();
-  }
-
-  function saveState(){
-    try{
-      const copy = JSON.parse(JSON.stringify(state));
-      // snapshot yığını büyük; kaydetme
-      delete copy.snapshots;
-      localStorage.setItem('rzar_state_v2', JSON.stringify(copy));
-    }catch(e){}
-  }
-
-  function loadState(){
-    try{
-      const raw = localStorage.getItem('rzar_state_v2');
-      if(!raw) return;
-      const saved = JSON.parse(raw);
-      Object.assign(state, saved);
-    }catch(e){}
-  }
-
-  function resetAll(){
-    if(!confirm('Tüm durumu sıfırlamak istiyor musun?')) return;
-    state.bankroll = +$('#bankIn').value || 5000;
-    state.startBank = state.bankroll;
-    state.base = +$('#baseIn').value || 50;
-    state.capPct = +$('#capIn').value || 20;
-    state.odds = +$('#oddsIn').value || 1.90;
-    state.thrLossToM = +$('#thrIn').value || 6;
-
-    state.mode='DA';
-    state.stake=state.base;
-    state.nextSide='ALT';
-    state.pending=null;
-    state.consecLoss=0; state.consecWin=0; state.lossChain=0;
-    state.lastSide=null; state.lastSideStreak=0;
-    state.hands=0; state.wins=0; state.losses=0;
-    state.sidesWindow=[];
-    state.snapshots=[];
-    $('#warn').textContent='—';
-    render(); saveState();
-  }
-
-  function bindEvents(){
-    // Zar butonları
-    document.querySelectorAll('.d').forEach(btn=>{
-      btn.addEventListener('click', e=>{
-        const die = e.currentTarget.getAttribute('data-die');
-        settleAndRecommend(die);
+  function updateUI(){
+    mevcutKasaEl.textContent = kasa.toFixed(2) + ' TL';
+    const bahis = siradakiBahis();
+    siradakiBahisEl.textContent = bahis > 0 ? bahis + ' TL' : '—';
+    // render sequence
+    seqDiv.innerHTML = '';
+    if(sequence.length === 0){
+      const done = document.createElement('div');
+      done.className = 'chip';
+      done.textContent = 'Bitti ✅';
+      seqDiv.appendChild(done);
+    } else {
+      sequence.forEach(s => {
+        const d = document.createElement('div');
+        d.className = 'chip';
+        d.textContent = s;
+        seqDiv.appendChild(d);
       });
-    });
-    // Uygula
-    $('#apply').addEventListener('click', ()=>{
-      pushSnapshot();
-      initFromInputs();
-    });
-    // Geri al
-    $('#undo').addEventListener('click', undo);
-    // Sıfırla
-    $('#reset').addEventListener('click', resetAll);
+    }
+    // enable/disable buttons
+    const disable = (siradakiBahis() === 0);
+    btnKazanc.disabled = disable;
+    btnKayip.disabled = disable;
+    btnKazanc.style.opacity = disable ? '0.5' : '1';
+    btnKayip.style.opacity = disable ? '0.5' : '1';
   }
 
-  function initialRecommend(){
-    state.stake = state.base;
-    state.nextSide = analyzeNextSide();
-    state.pending = {stake:state.stake, side:state.nextSide, mode:state.mode};
+  function addHistoryRow(bahis, sonuc, değişim){
+    elSayisi++;
+    const tr = document.createElement('tr');
+    const sonucBadge = sonuc === 'Kazanç'
+      ? `<span class="badge-win">+${değişim.toFixed(2)}</span>`
+      : `<span class="badge-loss">${değişim < 0 ? '' : '-'}${Math.abs(değişim).toFixed(2)}</span>`;
+    tr.innerHTML = `<td>${elSayisi}</td>
+                    <td>${bahis} TL</td>
+                    <td>${sonuc} ${sonucBadge}</td>
+                    <td>${kasa.toFixed(2)} TL</td>`;
+    // prepend
+    if(gecmisTbody.firstChild) gecmisTbody.insertBefore(tr, gecmisTbody.firstChild);
+    else gecmisTbody.appendChild(tr);
   }
 
-  // ====== BOOT ======
-  loadState();
-  // girişleri state ile senkronla
-  document.getElementById('bankIn').value = state.bankroll;
-  document.getElementById('baseIn').value = state.base;
-  document.getElementById('capIn').value  = state.capPct;
-  document.getElementById('oddsIn').value = state.odds.toFixed(2);
-  document.getElementById('thrIn').value  = state.thrLossToM;
+  // actions
+  function baslat(){
+    const k = parseFloat(inpKasa.value);
+    if(!Number.isFinite(k)){
+      alert('Geçerli bir kasa girin.');
+      return;
+    }
+    const seq = parseSequenceInput(inpAdimlar.value);
+    if(seq.length === 0){
+      alert('Geçerli adımlar girin (örn: 5,10,15).');
+      return;
+    }
+    const o = parseFloat(selOran.value);
+    if(!Number.isFinite(o) || o <= 1){
+      alert('Geçerli oran seçin.');
+      return;
+    }
+    kasa = k;
+    sequence = seq;
+    oran = o;
+    elSayisi = 0;
+    gecmisTbody.innerHTML = '';
+    updateUI();
+  }
 
-  if(!state.pending) initialRecommend();
-  render();
-  bindEvents();
+  function sifirla(){
+    inpKasa.value = 5000;
+    inpAdimlar.value = '1,2,3,4';
+    selOran.value = '1.9';
+    baslat();
+  }
+
+  function kazandik(){
+    const bahis = siradakiBahis();
+    if(bahis <= 0) return;
+    const net = bahis * (oran - 1);
+    kasa += net;
+    // remove first and last (or single)
+    if(sequence.length === 1) sequence.shift();
+    else {
+      sequence.shift();
+      if(sequence.length > 0) sequence.pop();
+    }
+    addHistoryRow(bahis, 'Kazanç', net);
+    updateUI();
+  }
+
+  function kaybettik(){
+    const bahis = siradakiBahis();
+    if(bahis <= 0) return;
+    kasa -= bahis;
+    sequence.push(bahis);
+    addHistoryRow(bahis, 'Kayıp', -bahis);
+    updateUI();
+  }
+
+  // wire events
+  btnBaslat.addEventListener('click', baslat);
+  btnSifirla.addEventListener('click', sifirla);
+  btnKazanc.addEventListener('click', kazandik);
+  btnKayip.addEventListener('click', kaybettik);
+
+  // init
+  // set inputs to defaults and initialize UI
+  inpKasa.value = 5000;
+  inpAdimlar.value = '20,20,20,20,20,20,20,20,20,20';
+  selOran.value = '1.9';
+  baslat();
 })();
 </script>
 </body>
