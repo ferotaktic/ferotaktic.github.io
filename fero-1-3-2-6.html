@@ -1,214 +1,1402 @@
-<!DOCTYPE html>
-<html lang="tr">
+<!--
+DEĞİŞİKLİK ÖZETİ (≤10 satır)
+1) AI Analytics Panel eklendi: Z-skoru, varyans/sapma, HR(50/100), aktif strateji, durum rozeti.
+2) Örüntü Tanıma: 4–6 uzunluklu kayma penceresi, alternasyon/çift-blok/karma şablonlar → sinyal.
+3) İstatistik: Ayarlanabilir |Z| eşiği, W_SIGNAL; kısa/uzun hit-rate ve seri uzunluğu kartları.
+4) ML (hafif): Markov (k=3 varsayılan, UI’dan değişir), online sayım + güven skoru.
+5) Meta-Öğrenme: 3 uzman (trend/mean/flip) paralel; 50/100 pencerede en iyiyi seç veya ağırlıklı karışım.
+6) Dinamik bahis/bütçe: mevcut modlara ek Kelly-lite ayarı; “PASS” üst üste eşiği (anti-pass loop).
+7) I/O: CSV dışa aktar, örnek dizi simülasyonu; localStorage kalıcılık; Reset.
+8) Global API (window.SicBoAI): init, onResult, suggestBet, setBankroll, setStrategy, exportCSV, reset.
+9) Harici kütüphane yok; tek dosya; mevcut ID/class/handler korunmuştur.
+--><!DOCTYPE html><html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>🔥 Tanrının Cezası — Fero'nun Taktiği</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>Tanrının Eli • Fero — Sic Bo (Small/Big) • Öğrenen Çekirdek v3 (Contextual Bandit, PASS, Paroli, Stops, Tie-Meta)</title>
 <style>
-  :root{
-    --bg-1:#070b18; --bg-2:#0a1226; --bg-3:#0d1833;
-    --glass:#0e1730aa;
-    --border:#2a3b66cc;
-    --accent:#f1c40f; --accent-2:#e67e22;
-    --text:#eaf1ff;
-    --muted:#a6b3d2;
-    --radius:16px;
-    --glow:0 0 20px rgba(241,196,15,.3),0 0 40px rgba(230,126,34,.2);
-  }
+:root{
+  --bg:#071022; --card:#0c1830; --muted:#9fb0d9; --text:#e6f0ff;
+  --accent:#7c5cff; --accent2:#22e3a2; --danger:#ff6b6b; --warn:#eab308; --ok:#10b981;
+  --btn:linear-gradient(90deg,var(--accent),var(--accent2));
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);
+  font-family:Inter,system-ui,Segoe UI,Roboto,Arial;line-height:1.35;overflow-x:hidden}
+.header{padding:16px;text-align:center;background:linear-gradient(180deg,#081329,#06101f);font-weight:800;color:#22e3a2}
+.container{max-width:980px;margin:16px auto;padding:12px}/* Kart */ .card{background:linear-gradient(180deg,rgba(12,24,48,.95),rgba(8,14,30,.95)); border:1px solid rgba(124,92,255,.14);border-radius:12px;padding:16px;margin-bottom:16px; box-shadow:0 12px 40px rgba(2,6,23,.45)} .h4{margin:0 0 12px;color:var(--muted);font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.5px} .sub{color:var(--muted);font-size:12px}
 
-  *{box-sizing:border-box}
-  body{
-    margin:0; font:600 15px/1.5 system-ui,Segoe UI,Roboto,Arial;
-    color:var(--text);
-    background:
-      radial-gradient(1200px 800px at 15% -10%, #3a2f0f55 0%, transparent 55%),
-      radial-gradient(1200px 800px at 120% 10%, #1f3a2055 0%, transparent 55%),
-      linear-gradient(180deg,var(--bg-1),var(--bg-2) 40%,var(--bg-3));
-    min-height:100vh;
-    display:flex; align-items:center; justify-content:center; padding:20px;
-  }
+/* Öneri başlığı + anlık stake */ .reco{display:flex;align-items:center;gap:10px;flex-wrap:wrap} .reco-badge{padding:6px 10px;border-radius:999px;font-weight:900} .reco-wait{background:#334155;color:#cbd5e1} .reco-small{background:#0b7a5e;color:#a7f3d0} .reco-big{background:#5c1c1c;color:#fecaca} .reco-pass{background:#3b2d06;color:#fde68a} .reco-pill{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#e6f0ff;font-weight:900} .status-pill{padding:6px 10px;border-radius:999px;font-weight:900;border:1px solid rgba(255,255,255,.12)} .halted{background:rgba(234,179,8,.1);color:#fde68a;border-color:rgba(234,179,8,.35)} .invert{background:rgba(124,92,255,.12);color:#c7b8ff;border-color:rgba(124,92,255,.35)}
 
-  .card{
-    width:100%; max-width:600px;
-    background:linear-gradient(180deg,#141d35cc,#0b1328cc);
-    backdrop-filter:blur(12px) saturate(110%);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    box-shadow:0 18px 60px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.04);
-    padding:26px;
-    position:relative;
-  }
+/* Kayıt butonları */ .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px} @media(max-width:640px){ .grid3{grid-template-columns:1fr} } .btn{cursor:pointer;border:none;border-radius:10px;padding:12px 14px;font-weight:800;background:var(--btn); color:#051025;transition:transform .14s,opacity .14s;min-height:44px;font-size:15px} .btn:active{transform:scale(.99)} .btn:hover{transform:translateY(-1px);opacity:.96} .btn[disabled]{opacity:.55;cursor:not-allowed} .btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.15);color:var(--text)} .btn-win{background:#0b7a5e} .btn-loss{background:#7f1d1d} .btn-tie{background:#3b2d06} .btn-warn{background:#eab308;color:#0a0a0a} .row{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
 
-  h1.title{
-    font-size:24px; margin:0 0 12px; text-align:center;
-    background:linear-gradient(90deg,var(--accent),var(--accent-2));
-    -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-    font-weight:900; text-shadow:var(--glow);
-  }
+/* Tık hissi – görsel pulse */ @keyframes tapWin{0%{box-shadow:0 0 0 0 rgba(34,227,162,.65);transform:scale(.98)}70%{box-shadow:0 0 0 16px rgba(34,227,162,0);transform:scale(1.01)}100%{box-shadow:0 0 0 0 rgba(34,227,162,0);transform:scale(1)}} @keyframes tapLoss{0%{box-shadow:0 0 0 0 rgba(255,107,107,.65);transform:scale(.98)}70%{box-shadow:0 0 0 16px rgba(255,107,107,0);transform:scale(1.01)}100%{box-shadow:0 0 0 0 rgba(255,107,107,0);transform:scale(1)}} @keyframes tapTie{0%{box-shadow:0 0 0 0 rgba(234,179,8,.65);transform:scale(.98)}70%{box-shadow:0 0 0 16px rgba(234,179,8,0);transform:scale(1.01)}100%{box-shadow:0 0 0 0 rgba(234,179,8,0);transform:scale(1)}} .pulse-win{animation:tapWin .42s ease-out} .pulse-loss{animation:tapLoss .42s ease-out} .pulse-tie{animation:tapTie .42s ease-out} .kbd{background:#0a1327;border:1px solid rgba(255,255,255,.12);padding:6px 8px;border-radius:8px;color:#9fb0d9;font-size:12px}
 
-  .bank{font-size:18px;font-weight:700;margin-bottom:12px;color:#2ecc71;text-align:center}
+/* KPI */ .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:12px} .kpi{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);padding:12px;border-radius:10px} .kpi .t{font-size:12px;color:var(--muted)} .kpi .v{margin-top:6px;font-weight:900}
 
-  input{
-    width:100%;padding:12px;border-radius:var(--radius);
-    border:1px solid #2a3b66;background:#0d1833;color:var(--text);
-    margin-bottom:10px;text-align:center;font-size:15px;font-weight:600;
-  }
+/* Tablo */ .table-wrap{overflow:auto;max-height:60vh;margin-top:12px;border-radius:10px} table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed} th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.06);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap} th{position:sticky;top:0;background:rgba(7,16,34,.96);color:var(--muted)}
 
-  button{
-    border:none;cursor:pointer;font-weight:800;
-    border-radius:var(--radius);padding:12px 18px;
-    transition:.2s;
-  }
+/* Ayarlar */ .settings.card{padding:12px} .form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px} .group{display:flex;flex-direction:column;gap:6px} .label{color:var(--muted);font-size:11px} .input, select{ width:100%;background:transparent;border:1px solid rgba(255,255,255,.12); color:#fff;padding:8px 10px;border-radius:10px;min-height:36px;font-size:13px } .small-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px} .note{font-size:12px;color:var(--muted);margin-top:6px}
 
-  .gold-btn{
-    background:linear-gradient(135deg,var(--accent),var(--accent-2));
-    color:#0b1220; box-shadow:var(--glow); width:100%;
-  }
-  .gold-btn:hover{transform:translateY(-2px) scale(1.02)}
+/* Warm-up panel & import */ .warm{margin-top:10px;padding:10px;border:1px dashed rgba(255,255,255,.18);border-radius:10px;background:rgba(255,255,255,.03)} .warm .title{font-weight:900;color:#a7b8e8;margin-bottom:6px} .warm .p{font-size:12px;color:#9fb0d9} .import{margin-top:10px;padding:10px;border:1px dashed rgba(124,92,255,.25);border-radius:10px;background:rgba(124,92,255,.06)} .import textarea{width:100%;min-height:120px;background:#0a1327;color:#e6f0ff;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px;font-family:ui-monospace,Consolas,monospace;font-size:12px}
 
-  .dice-title{font-weight:700;text-align:center;margin:18px 0 10px}
+/* SR only */ .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 
-  .dice-grid{
-    display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;
-  }
-  .dice-btn{
-    background:#1c2544;border:1px solid #2f3f66;color:var(--text);
-    font-size:18px;font-weight:700;border-radius:var(--radius);padding:14px;
-    transition:.2s;
-  }
-  .dice-btn:hover{background:#263359;transform:translateY(-1px)}
+/* <!-- AI-INJECT:styles --> / .ai-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:10px} .ai-kpi{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:10px} .ai-kpi .t{font-size:11px;color:var(--muted)} .ai-kpi .v{margin-top:6px;font-weight:900} .ai-badge{padding:6px 10px;border-radius:999px;font-weight:900;display:inline-block} .ai-badge.neutral{background:#334155;color:#cbd5e1} .ai-badge.trend{background:#0b7a5e;color:#a7f3d0} .ai-badge.mean{background:#5c1c1c;color:#fecaca} .ai-badge.flip{background:#3b2d06;color:#fde68a} .ai-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:10px} .ai-form .group{display:flex;flex-direction:column;gap:6px} .ai-range{width:100%} .ai-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px} .badge-soft{background:rgba(124,92,255,.12);color:#c7b8ff;border:1px solid rgba(124,92,255,.25);border-radius:999px;padding:6px 10px;font-weight:800;display:inline-block} textarea.ai-seq{width:100%;min-height:88px;background:#0a1327;color:#e6f0ff;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px;font-family:ui-monospace,Consolas,monospace;font-size:12px} .small-note{font-size:11px;color:#9fb0d9} .switch{display:flex;align-items:center;gap:8px} .switch input{transform:scale(1.15)} / <!-- /AI-INJECT:styles --> */ </style>
 
-  .reset-btn{
-    background:#e74c3c;color:white;width:100%;
-    margin:10px 0;font-weight:800;
-  }
-  .reset-btn:hover{filter:brightness(1.1)}
-
-  .result-box{
-    padding:12px;border-radius:var(--radius);font-weight:700;
-    text-align:center;margin-bottom:12px;
-  }
-  .win{background:#27ae60;color:white}
-  .lose{background:#e74c3c;color:white}
-  .info-box{
-    background:rgba(255,255,255,.05);padding:12px;border-radius:var(--radius);
-    font-size:14px;margin-top:16px;line-height:1.4
-  }
-  .history{
-    margin-top:12px;font-size:14px;text-align:left;
-    background:rgba(255,255,255,.05);padding:12px;border-radius:var(--radius);
-    max-height:140px;overflow-y:auto
-  }
-  .footer{
-    margin-top:20px;text-align:center;font-size:12px;color:var(--muted);
-    border-top:1px solid #2a3b66;padding-top:10px
-  }
-</style>
 </head>
 <body>
-  <div class="card">
-    <h1 class="title">🔥 Tanrının Cezası — Fero'nun Taktiği 🔥</h1>
-    <div class="bank" id="bankDisplay">Kasa: ₺0</div>
+<div class="header">🎲 Tanrının Eli • <b>Fero</b> — Sic Bo (Small/Big) • Öğrenen Çekirdek v3 — Contextual Bandit • PASS • Paroli • Stops • Tie-Meta</div><div class="container">  <!-- Öneri + Eylem -->  <div class="card">
+    <div class="h4">Öneri</div>
+    <div class="reco">
+      <div id="recoBadge" class="reco-badge reco-wait">Dur</div>
+      <div class="reco-pill">Sıradaki Bahis: <span id="recoStake">—</span> TL</div>
+      <div class="reco-pill">Güven: <span id="recoConf">—</span></div>
+      <div id="haltPill" class="status-pill halted" style="display:none">EMNİYET: DURDURULDU</div>
+      <div id="invPill" class="status-pill invert" style="display:none">Invert Mode</div>
+      <div class="sub">Her el <b>Small</b>, <b>Big</b> ya da <b>Tie</b> tuşla. Sistem “Dur / Küçük / Büyük / PASS” ve tutarı otomatik verir.</div>
+    </div><!-- WARM-UP: Son 10 el -->
+<div id="warmPanel" class="warm">
+  <div class="title">Başlangıç Kalibrasyonu</div>
+  <div class="p">Başlamak için <b>son 10 eli</b> gir. Tamamlanınca öneri açılır. (<span id="wStat">0/10</span>)</div>
+  <div class="row">
+    <button id="wSmall" class="btn btn-win">Small</button>
+    <button id="wBig" class="btn btn-loss">Big</button>
+    <button id="wTie" class="btn btn-tie">Tie</button>
+    <button id="wUndo" class="btn ghost">Geri Al</button>
+    <button id="wClear" class="btn ghost">Temizle</button>
+  </div>
+  <div class="kbd" style="margin-top:8px">Kısayol: 1=Small · 2=Big · 3=Tie · Backspace=Geri</div>
+</div>
 
-    <input type="number" id="bankInput" placeholder="Başlangıç Kasası (₺)" min="1">
-    <button class="gold-btn" onclick="setBank()">💰 Kasa Başlat</button>
-    <div id="betSuggestion"></div>
+<div class="grid3" style="margin-top:10px">
+  <button id="btnSmall" class="btn btn-win">SMALL geldi</button>
+  <button id="btnBig"   class="btn btn-loss">BIG geldi</button>
+  <button id="btnTie"   class="btn btn-tie">TIE geldi (Kayıp)</button>
+</div>
 
-    <input type="number" id="baseBet" placeholder="Bahis Miktarı (₺)" min="1">
+<div class="row">
+  <button id="btnUndo" class="btn ghost">Geri Al</button>
+  <button id="btnClear" class="btn ghost">Tüm Kayıtları Sil</button>
+  <button id="btnResume" class="btn btn-warn" style="display:none">Emniyeti Kaldır (Devam)</button>
+  <div class="kbd">Kısayol: S = Small · B = Big · T = Tie · Z = Geri</div>
+</div>
 
-    <div class="dice-title">🎲 Zar Sonucunu Seç</div>
-    <div class="dice-grid">
-      <button class="dice-btn" onclick="playRound(1)">1</button>
-      <button class="dice-btn" onclick="playRound(2)">2</button>
-      <button class="dice-btn" onclick="playRound(3)">3</button>
-      <button class="dice-btn" onclick="playRound(4)">4</button>
-      <button class="dice-btn" onclick="playRound(5)">5</button>
-      <button class="dice-btn" onclick="playRound(6)">6</button>
-    </div>
+<div class="kpi-grid">
+  <div class="kpi"><div class="t">Öneri (Bu El)</div><div class="v" id="kRecoText">Dur</div></div>
+  <div class="kpi"><div class="t">Bank</div><div class="v" id="kBank">5000.00</div></div>
+  <div class="kpi"><div class="t">Stake (Sıradaki)</div><div class="v" id="kStake">—</div></div>
+  <div class="kpi"><div class="t">Dinamik Taban (u)</div><div class="v" id="kUnit">—</div></div>
+  <div class="kpi"><div class="t">HWM (Tepe)</div><div class="v" id="kHWM">5000.00</div></div>
+  <div class="kpi"><div class="t">Bahisli Eller (W/L)</div><div class="v" id="kWL">0 / 0</div></div>
+  <div class="kpi"><div class="t">PNL (Seans)</div><div class="v" id="kPNL">+0.00</div></div>
+  <div class="kpi"><div class="t">Kayıp Serisi (Bahis)</div><div class="v" id="kLStreak">0</div></div>
+  <div class="kpi"><div class="t">W WinRate (20)</div><div class="v" id="kWR">—</div></div>
+  <div class="kpi"><div class="t">Gölge PnL (What-if)</div><div class="v" id="kShadow">+0.00</div></div>
+  <div class="kpi"><div class="t">Strateji / Risk</div><div class="v" id="kSM">Adaptive / Normal</div></div>
+</div>
 
-    <div class="result-box" id="output">Başlamak için kasa gir.</div>
-    <button class="reset-btn" onclick="resetGame()">🔄 Yeniden Başla</button>
+<div class="h4" style="margin-top:12px">Geçmiş</div>
+<div class="table-wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th><th>Kaynak</th><th>Öneri</th><th>Gerçek</th><th>Bahis</th><th>Sonuç</th><th>Net</th><th>Bank</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
 
-    <div class="history" id="history"><strong>Oyun Geçmişi:</strong><br></div>
+<!-- Toplu import (opsiyonel) -->
+<div class="import" id="importBox">
+  <div class="h4">Toplu Geçmiş Yapıştır (Opsiyonel)</div>
+  <div class="sub">Buraya tek tek satırlı <b>small/big/tie</b> veya eski tablo satırlarını yapıştır. Sistem “Gerçek” akışını ayıklayıp simüle eder.</div>
+  <textarea id="pasteArea" placeholder="small
 
-    <div class="info-box">
-      <strong>ℹ️ 1-3-2-6 Taktiği Nedir?</strong><br>
-      Bu stratejide seri halinde 4 adım oynanır: <br>
-      1️⃣ İlk adımda 1 birim bahis.<br>
-      2️⃣ Kazanırsan ikinci adımda 3 birim.<br>
-      3️⃣ Kazanırsan üçüncü adımda 2 birim.<br>
-      4️⃣ Kazanırsan dördüncü adımda 6 birim.<br>
-      Kaybedersen seri başa döner. Biz burada 3.5 ÜST oynuyoruz, yani zar 4, 5 veya 6 gelirse kazanıyoruz.
-    </div>
+big big tie ..."></textarea> <div class="row"> <button id="btnImport" class="btn">İçe Aktar ve Simüle Et</button> <button id="btnImportClear" class="btn ghost">Alanı Temizle</button> <button id="btnQuickOpt" class="btn ghost">Hızlı Optimize (Z_THR)</button> </div> </div>
 
-    <div class="footer">
-      © 2025 Fero | Tüm hakları saklıdır. <br>
-      Kumarı sorumlu oynayın. Bu taktik en az kayıpla para kazanmayı amaçlar.
+  </div>  <!-- AI-INJECT:panel -->  <div class="card" id="aiPanel">
+    <div class="h4">Analytics Panel (AI)</div>
+    <div class="ai-grid">
+      <div class="ai-kpi"><div class="t">Durum</div><div class="v"><span id="aiStatus" class="ai-badge neutral">Sinyal yok</span></div></div>
+      <div class="ai-kpi"><div class="t">Z-skoru / |Z| eşiği</div><div class="v"><span id="aiZ">0.00</span> / <span id="aiZThrVal">1.10</span></div></div>
+      <div class="ai-kpi"><div class="t">Std Sapma (W)</div><div class="v" id="aiStd">—</div></div>
+      <div class="ai-kpi"><div class="t">Hit Rate (50)</div><div class="v" id="aiHR50">—</div></div>
+      <div class="ai-kpi"><div class="t">Hit Rate (100)</div><div class="v" id="aiHR100">—</div></div>
+      <div class="ai-kpi"><div class="t">Aktif Strateji</div><div class="v" id="aiActiveStrat">—</div></div>
+      <div class="ai-kpi"><div class="t">Markov k</div><div class="v" id="aiKDisp">3</div></div>
+      <div class="ai-kpi"><div class="t">ML Güven</div><div class="v" id="aiMLConf">—</div></div>
+    </div><div class="ai-form" style="margin-top:12px">
+  <div class="group">
+    <label class="label">|Z| Eşiği</label>
+    <input id="aiZThr" type="range" min="0.8" max="1.6" step="0.02" class="ai-range" value="1.10"/>
+    <div class="small-note">Z küçükse mean-revert zayıflar; büyükse güçlenir.</div>
+  </div>
+  <div class="group">
+    <label class="label">Sinyal Penceresi (W_SIGNAL)</label>
+    <input id="aiWsig" type="number" class="input" value="12" min="8" max="30" step="1"/>
+  </div>
+  <div class="group">
+    <label class="label">Markov k</label>
+    <input id="aiKOrder" type="number" class="input" value="3" min="2" max="6" step="1"/>
+  </div>
+  <div class="group">
+    <label class="label">Meta Seçim</label>
+    <select id="aiMixMode" class="input">
+      <option value="WINNER" selected>En İyi Uzmanı Kullan</option>
+      <option value="WEIGHTED">Ağırlıklı Karışım</option>
+    </select>
+    <div class="small-note">Trend • Mean • Flip ağırlıkları aşağıdan.</div>
+  </div>
+  <div class="group">
+    <label class="label">Ağırlıklar (Trend/Mean/Flip)</label>
+    <div class="row" style="gap:6px">
+      <input id="aiWTrend" class="input" type="number" value="1.0" step="0.1"/>
+      <input id="aiWMean"  class="input" type="number" value="1.0" step="0.1"/>
+      <input id="aiWFlip"  class="input" type="number" value="1.0" step="0.1"/>
     </div>
   </div>
+  <div class="group">
+    <label class="label">PASS Limit (üst üste)</label>
+    <input id="aiPassMax" class="input" type="number" value="3" min="0" step="1"/>
+    <div class="small-note">Anti-pass: limit aşıldığında taraf öner.</div>
+  </div>
+  <div class="group">
+    <label class="label">Para Yönetimi</label>
+    <select id="aiMM" class="input">
+      <option value="ADAPTIVE" selected>Adaptive (varsayılan)</option>
+      <option value="DALEM">D'Alembert</option>
+      <option value="PAROLI">Paroli</option>
+      <option value="FIBO">Fibonacci</option>
+    </select>
+  </div>
+  <div class="group">
+    <label class="label">Kelly-lite (0–1)</label>
+    <input id="aiKelly" class="input" type="number" min="0" max="1" step="0.05" value=""/>
+    <div class="small-note">Boş bırak: risk modundan al.</div>
+  </div>
+  <div class="group switch">
+    <input id="aiPersist" type="checkbox" checked/>
+    <label class="label" for="aiPersist">Oturumu Kaydet (localStorage)</label>
+  </div>
+  <div class="group switch">
+    <input id="aiAuto" type="checkbox"/>
+    <label class="label" for="aiAuto">Auto-Bet (sadece öneri üretir)</label>
+  </div>
+</div>
 
-<script>
-  let sequence=[1,3,2,6];
-  let step=0,historyLog=[],bank=0,initialBank=0;
+<div style="margin-top:10px">
+  <div class="label">Simülasyon/Örnek Dizi (S/B/T veya small/big/tie)</div>
+  <textarea id="aiSeq" class="ai-seq" placeholder="s b s b b s ..."></textarea>
+  <div class="ai-actions">
+    <button id="btnAISim" class="btn">Simüle Et</button>
+    <button id="btnExportCSV" class="btn ghost">CSV Dışa Aktar</button>
+    <button id="btnAIReset" class="btn ghost">AI Reset</button>
+  </div>
+</div>
 
-  function setBank(){
-    bank=parseFloat(document.getElementById('bankInput').value);
-    initialBank=bank;
-    if(isNaN(bank)||bank<=0){alert("Geçerli bir kasa miktarı gir!");return;}
-    document.getElementById('bankDisplay').innerHTML=`Kasa: ₺${bank}`;
-    showBaseBetSuggestion();
-    document.getElementById('output').innerHTML="Kasa ayarlandı. Zar seç ve oyna!";
-    document.getElementById('output').className="result-box";
+  </div>
+  <!-- /AI-INJECT:panel -->  <!-- AYARLAR -->  <div class="card settings">
+    <div class="h4">Ayarlar</div>
+    <div class="form">
+      <div class="group">
+        <label class="label" for="bankIn">Başlangıç Bank</label>
+        <input id="bankIn" class="input" type="number" value="5000" step="1" min="0"/>
+      </div><div class="group">
+    <label class="label">Bahis İlerlemesi</label>
+    <select id="strategyMode" class="input">
+      <option value="ADAPTIVE" selected>Adaptive (varsayılan)</option>
+      <option value="DALEM">D'Alembert</option>
+      <option value="FIBO">Fibonacci</option>
+      <option value="PAROLI">Paroli (pozitif)</option>
+    </select>
+    <div class="note">Adaptive: mevcut akıllı stake; D'Alembert/Fibonacci/Paroli opsiyonel.</div>
+  </div>
+
+  <div class="group">
+    <label class="label">Risk Modu</label>
+    <select id="riskMode" class="input">
+      <option value="CONSERVATIVE">Konservatif</option>
+      <option value="NORMAL" selected>Normal</option>
+      <option value="AGGRESSIVE">Agresif</option>
+    </select>
+    <div class="note">u ve artış katsayıları buna göre ölçeklenir; Kelly fraksiyonu değişir.</div>
+  </div>
+
+  <div class="group">
+    <label class="label">PASS (Bahis Geç) — Güven Eşiği</label>
+    <select id="passMode" class="input">
+      <option value="OFF">Kapalı</option>
+      <option value="LOW">Düşük</option>
+      <option value="MEDIUM" selected>Orta</option>
+      <option value="HIGH">Yüksek</option>
+    </select>
+    <div class="note">Düşük güven durumunda eli pas geç. Eşik=Trend~Mean ve |z| küçükken.</div>
+  </div>
+
+  <div class="group">
+    <label class="label">Stop-Loss / Stop-Win (%)</label>
+    <div class="row" style="gap:6px">
+      <input id="stopLossPct" class="input" type="number" value="10" step="1" min="0" style="max-width:120px"/>
+      <input id="stopWinPct"  class="input" type="number" value="12" step="1" min="0" style="max-width:120px"/>
+    </div>
+    <div class="note">Baz: Başlangıç Bank. Aşılınca emniyetle durur, “Devam” ile kaldır.</div>
+  </div>
+
+  <div class="group">
+    <label class="label">Paroli Maks Zincir</label>
+    <input id="paroliMax" class="input" type="number" value="3" min="1" step="1"/>
+    <div class="note">Paroli seçiliyken arka arkaya kazanımda kaç adım artırılacağı.</div>
+  </div>
+
+  <div class="group">
+    <label class="label">Tie Meta (Stake indirimi %)</label>
+    <input id="tieReduce" class="input" type="number" value="30" min="0" max="80" step="5"/>
+    <div class="note">Son 30 elde TIE oranı beklenenden yüksekse stake bu oranda kısılır ya da PASS.</div>
+  </div>
+
+  <div class="group">
+    <label class="label">Invert Mode (Deneysel)</label>
+    <select id="invertMode" class="input">
+      <option value="OFF" selected>Kapalı</option>
+      <option value="ON">Açık</option>
+    </select>
+    <div class="note">Gölge PnL bariz öndeyse yönü tersine çevirmeyi dener.</div>
+  </div>
+
+  <div class="group">
+    <div class="small-actions">
+      <button id="apply" class="btn">Uygula</button>
+      <button id="reset" class="btn ghost">Varsayılana Dön</button>
+    </div>
+    <div class="note">“Bank” girersin; <b>u</b> otomatik seçilir (~%0.6, moda göre ölçeklenir).</div>
+  </div>
+</div>
+
+  </div>
+</div><!-- SR-Only canlı bölge --><div id="live" class="sr-only" aria-live="polite"></div><script>
+(()=> {
+/* =================== Parametreler & Sabitler =================== */
+const MIN_WARMUP = 10;
+let   W_WINRATE  = 20;       // win-rate penceresi
+let   W_SIGNAL   = 12;       // z-skor pencere
+let   Z_THR      = 1.10;     // z-skor eşiği (adaptif)
+const STREAK_TREND = 2;      // 2xRule
+let   SERIES_LOCK  = 4;      // seri kilit eşiği
+const HYST_OPP     = 2;      // kilidi bozmak için karşı sinyal sayısı
+const HYST_LOSS    = 2;      // kilitte net 2 kayıp → kilidi çöz
+const FF_HOLD_UNTIL_PAIR = true;
+const DECAY = 0.995;         // bandit & eşiğe çürüme
+
+/* Stake kontrol (baz) */
+let MAX_STEP_U          = 2;
+let MAX_STEP_MULT       = 1.35;
+let MAX_STEP_MULT_LOCK  = 1.25;
+const CYCLE_TP_U        = 3;
+const ADAPT_SERIES_LEN  = 6;
+
+/* Risk moda göre çarpanlar */
+const riskProfiles = {
+  CONSERVATIVE:{ uPct:0.005, kellyFrac:0.35, stepMult:1.20, stepU:1.5 },
+  NORMAL:{       uPct:0.006, kellyFrac:0.50, stepMult:1.35, stepU:2.0 },
+  AGGRESSIVE:{   uPct:0.008, kellyFrac:0.75, stepMult:1.45, stepU:2.5 }
+};
+
+/* Durum */
+let baseBank = 5000, unit = 30;
+let bank = baseBank, hwm = baseBank;
+let stake = unit, maxStake = unit;
+let lossStreak = 0, winStreak = 0;
+let nHands = 0, wCount=0, lCount=0;
+let warmActive = true;
+let halted = false;
+
+let recSide = 'NONE';   // 'S'|'B'|'NONE'|'PASS'
+let recSource = 'NONE'; // 'PAIR'|'LOCK'|'TREND'|'MEAN'|'FALLBACK'|'PAUSE'|'CONF-PASS'|'PATTERN'
+
+/* Geçmiş */
+const warmSeq = [];
+const histAll = [];     // 'S'|'B'|'T'
+const histSig = [];     // 'S'|'B' (T → son yön)
+const histBetWR = [];   // 1/0 sadece bahisli eller
+
+/* Histerezis */
+let lockedSide = null;  // 'S'|'B'|null
+let oppSinceLockSig = 0;
+let lockLossCount   = 0;
+
+/* Flip-flop tutucu */
+let ffHold = false;
+
+/* Bandit (TREND vs MEAN) + decay */
+const beta = { TREND:{a:1,b:1}, MEAN:{a:1,b:1} };
+function decayBandit(){
+  beta.TREND.a*=DECAY; beta.TREND.b*=DECAY;
+  beta.MEAN.a *=DECAY; beta.MEAN.b *=DECAY;
+  const target=1.10;
+  Z_THR = Math.max(0.95, Math.min(1.25, Z_THR*DECAY + target*(1-DECAY)));
+}
+
+/* Kullanıcı ayarları (UI) */
+let strategyMode = 'ADAPTIVE';
+let riskMode     = 'NORMAL';
+let passMode     = 'MEDIUM'; // OFF | LOW | MEDIUM | HIGH
+let stopLossPct  = 10;
+let stopWinPct   = 12;
+let paroliMax    = 3;
+let tieReducePct = 30;
+let invertMode   = 'OFF';
+
+/* What-if toplam */
+let shadowPNL = 0;
+
+/* =================== Yardımcılar =================== */
+const $ = id => document.getElementById(id);
+const money = x => (Number.isFinite(x)?x:0).toFixed(2);
+
+function setRecoBadge(side, tag=''){
+  const el = $('recoBadge'); const t = $('kRecoText');
+  el.className = 'reco-badge ';
+  if(side==='S'){ el.classList.add('reco-small'); el.textContent='Küçüğe Oyna'+(tag?` (${tag})`:``); t.textContent='Küçüğe Oyna'; }
+  else if(side==='B'){ el.classList.add('reco-big'); el.textContent='Büyüğe Oyna'+(tag?` (${tag})`:``); t.textContent='Büyüğe Oyna'; }
+  else if(side==='PASS'){ el.classList.add('reco-pass'); el.textContent='PASS'+(tag?` (${tag})`:``); t.textContent='PASS'; }
+  else{ el.classList.add('reco-wait'); el.textContent='Dur'+(tag?` (${tag})`:``); t.textContent='Dur'; }
+}
+
+function rollingWR(){ if(histBetWR.length===0) return null; return histBetWR.reduce((a,b)=>a+b,0)/histBetWR.length; }
+
+function autoUnitFromBank(b){
+  // risk moduna göre taban u
+  const profile = riskProfiles[riskMode]||riskProfiles.NORMAL;
+  const basePct = profile.uPct;
+  let u = Math.max(10, Math.round(b*basePct));
+  const wr = rollingWR();
+  if(wr!==null){
+    if(wr>=0.58) u = Math.round(u*1.15);
+    else if(wr<=0.46) u = Math.max(10, Math.round(u*0.9));
+  }
+  return u;
+}
+function dynamicUnit(){
+  const wr = rollingWR(); let f = 1.0;
+  if(wr!==null){
+    if(wr >= 0.58) f = 1.10;
+    else if(wr >= 0.52) f = 1.04;
+    else if(wr <= 0.46) f = 0.90;
+    else if(wr <= 0.48) f = 0.96;
+  }
+  return Math.max(1, Math.round(unit*f));
+}
+function lastStreak(side){ let c=0; for(let i=histSig.length-1;i>=0;i--){ if(histSig[i]===side) c++; else break; } return c; }
+function flipFlop4(){ const a = histSig.slice(-4); return a.length===4 && (a[0]!==a[1] && a[0]===a[2] && a[1]===a[3]); }
+function pairSeen(){ const a=histSig.slice(-2); return a.length===2 && a[0]===a[1]; }
+
+function zScore(){
+  const w = histSig.slice(-W_SIGNAL), n = w.length; if(n===0) return 0;
+  const sCnt = w.filter(x=>x==='S').length; const mean = n*0.5; const sd = Math.sqrt(n*0.25); if(sd===0) return 0;
+  return (sCnt-mean)/sd; // + Small aşırı, - Big aşırı
+}
+
+/* Desen sinyalleri (genişletildi) */
+function patternSignal(){
+  const a = histSig;
+  if(a.length>=6){
+    const b = a.slice(-6).join('');
+    if(b==='SSBBSS') return {side:'S', source:'PATTERN', tag:'2-2-2'};
+    if(b==='BBSSBB') return {side:'B', source:'PATTERN', tag:'2-2-2'};
+  }
+  // Kayma penceresi 4–6: alternasyon/çift blok/karma
+  const check = (len)=>{
+    if(a.length<len) return null;
+    const s = a.slice(-len).join('');
+    // Alternasyon (SBSB / BSBS / ... len=4/5/6)
+    if(/^(SB){2,3}$/.test(s) || /^(BS){2,3}$/.test(s)){
+      // Kullanıcı isteği: SBSB → S öner
+      const side = s[0]==='S' ? 'S' : 'B';
+      return {side, source:'PATTERN', tag:'ALT'};
+    }
+    // Çift blok: SSBB* veya BBSS*
+    if(/^SSBB/.test(s)) return {side:'S', source:'PATTERN', tag:'SSBB'};
+    if(/^BBSS/.test(s)) return {side:'B', source:'PATTERN', tag:'BBSS'};
+    // Karma örnekler: SBBS / BSSB → ilk tarafa eğilim
+    if(/SBBS$/.test(s)) return {side:'S', source:'PATTERN', tag:'SBBS'};
+    if(/BSSB$/.test(s)) return {side:'B', source:'PATTERN', tag:'BSSB'};
+    return null;
+  };
+  return check(6) || check(5) || check(4) || null;
+}
+
+/* Bağlamsal ağırlıklar (trend vs mean) */
+function contextWeights(){
+  const z = zScore();
+  const sLen = lastStreak('S'), bLen = lastStreak('B');
+  const series = Math.max(sLen,bLen);
+  let wT = 1.0, wM = 1.0;
+
+  if(series>=3) wT *= 1.08;
+  if(series>=5) wT *= 1.10;
+  if(Math.abs(z)>=Z_THR+0.2) wM *= 1.10;
+  if(lossStreak>=3) wM *= 1.06;
+
+  return {wT, wM};
+}
+
+/* Güven skoru ve PASS eşiği */
+function confidenceOfChoice(sT, sM){
+  const d = Math.abs(sT - sM);
+  const z = Math.min(2.5, Math.abs(zScore()))/2.5;
+  return Math.max(0, Math.min(1, 0.4*d + 0.6*z));
+}
+function passThreshold(){
+  if(passMode==='OFF') return -1;
+  if(passMode==='LOW') return 0.20;
+  if(passMode==='MEDIUM') return 0.35;
+  return 0.50; // HIGH
+}
+
+/* Tie meta: son 30 elde TIE beklenenden (≈2.8%) belirgin fazlaysa */
+function tieMetaEffect(){
+  const W = 30, exp = 0.028;
+  const hh = histAll.slice(-W);
+  const ties = hh.filter(x=>x==='T').length;
+  const ratio = hh.length? ties/hh.length : 0;
+  return ratio > exp*2.2;
+}
+
+/* =================== Öneri çekirdeği =================== */
+let lastConfShown = 0;
+function recommendCore(){
+  // Emniyet durak
+  if(halted) return {side:'NONE', source:'PAUSE', tag:'EMNIYET', conf:0};
+
+  // Flip-flop hold
+  if(flipFlop4()){ ffHold = true; }
+  if(ffHold){
+    if(pairSeen()){ ffHold = false; } else { return {side:'NONE', source:'PAUSE', tag:'Flip-Flop', conf:0}; }
   }
 
-  function showBaseBetSuggestion(){
-    let suggested=10;
-    if(bank<=1000) suggested=10;
-    else if(bank<=2000) suggested=20;
-    else if(bank<=3000) suggested=30;
-    else if(bank<=5000) suggested=50;
-    else if(bank<=10000) suggested=100;
-    else if(bank<=20000) suggested=200;
-    document.getElementById('betSuggestion').innerHTML=`💡 Önerilen başlangıç bahsi: ₺${suggested}`;
+  // Seri kilidi
+  const sLen = lastStreak('S'), bLen = lastStreak('B');
+  const lastSide = (sLen>0 && sLen>=bLen) ? 'S' : (bLen>0 ? 'B' : null);
+
+  if(lockedSide===null){
+    if(sLen >= SERIES_LOCK){ lockedSide='S'; oppSinceLockSig=0; lockLossCount=0; }
+    else if(bLen >= SERIES_LOCK){ lockedSide='B'; oppSinceLockSig=0; lockLossCount=0; }
+  }else{
+    if(lastSide===lockedSide){ oppSinceLockSig=0; return {side:lockedSide, source:'LOCK', conf:.65}; }
+    else if(lastSide!==null){
+      oppSinceLockSig++;
+      if(oppSinceLockSig < HYST_OPP) return {side:lockedSide, source:'LOCK', conf:.55};
+      lockedSide=null; oppSinceLockSig=0; lockLossCount=0;
+    }
+  }
+  if(lockedSide!==null) return {side:lockedSide, source:'LOCK', conf:.55};
+
+  // PATTERN (öncelik)
+  const pat = patternSignal();
+  if(pat) return { ...pat, conf:.60 };
+
+  // === META: 3 uzman + Markov ===
+  const meta = expertsDecision();
+  if(meta && meta.side){ return meta; }
+
+  // 2xRule
+  if(sLen>=STREAK_TREND) return {side:'S', source:'PAIR', conf:.52};
+  if(bLen>=STREAK_TREND) return {side:'B', source:'PAIR', conf:.52};
+
+  // Z-skor adayları
+  const z = zScore();
+  let meanCand=null;
+  if(z >= Z_THR) meanCand = {side:'B', source:'MEAN', conf:.5};
+  else if(z <= -Z_THR) meanCand = {side:'S', source:'MEAN', conf:.5};
+
+  // mini trend adayı
+  let trendCand=null;
+  if(sLen >= 1) trendCand = {side:'S', source:'TREND', conf:.5};
+  if(bLen >= 1) trendCand = {side:'B', source:'TREND', conf:.5};
+
+  // Bandit seçimi (bağlamsal ağırlıklı Thompson)
+  if(trendCand && meanCand){
+    const draw = (a,b)=> Math.max(0, Math.min(1, a/(a+b) + (Math.random()*0.08-0.04)));
+    let sT = draw(beta.TREND.a, beta.TREND.b);
+    let sM = draw(beta.MEAN.a,  beta.MEAN.b);
+    const {wT,wM} = contextWeights();
+    sT *= wT; sM *= wM;
+
+    // Güven & PASS
+    const conf = confidenceOfChoice(sT,sM);
+    const pThr = passThreshold();
+    let choice = (sT>=sM) ? trendCand : meanCand;
+    const tieHeavy = tieMetaEffect();
+    if(tieHeavy && passMode!=='OFF'){ return {side:'PASS', source:'CONF-PASS', conf, tag:'Tie-Meta'}; }
+    if(conf < pThr && passMode!=='OFF'){ return {side:'PASS', source:'CONF-PASS', conf, tag:'Low-Conf'}; }
+
+    choice.conf = conf;
+    return choice;
+  }
+  if(trendCand){ return trendCand; }
+  if(meanCand){ return meanCand; }
+
+  // Belirsiz → son akışa katıl
+  if(histSig.length>=1){
+    return {side:(histSig[histSig.length-1]==='S'?'S':'B'), source:'FALLBACK', conf:0.3};
+  }
+  return {side:'NONE', source:'NONE', conf:0};
+}
+
+function computeNextRecommendation(){
+  if(warmActive){ recSide='NONE'; recSource='NONE'; $('recoConf').textContent='—'; updateAnalytics(); return; }
+  const rec = recommendCore();
+  recSide   = rec.side;
+  recSource = rec.source;
+  let conf = (typeof rec.conf==='number') ? rec.conf : 0.5;
+
+  // PASS limit kontrolü (anti pass-loop)
+  if(recSide==='PASS'){
+    ai.passConsec++;
+    const limit = ai.passMax;
+    if(limit>=0 && ai.passConsec>=limit){
+      // En iyi uzmanı zorla
+      const force = expertsDecision(true);
+      if(force && force.side){ recSide=force.side; recSource=force.source+'-FORCE'; conf=Math.max(conf, .45); }
+      ai.passConsec = 0;
+    }
+  } else {
+    ai.passConsec = 0;
   }
 
-  function playRound(diceValue){
-    let baseBet=parseFloat(document.getElementById('baseBet').value);
-    let output=document.getElementById('output');
-    let history=document.getElementById('history');
-    if(isNaN(baseBet)||baseBet<=0){output.innerHTML="⚠️ Geçerli bir bahis gir.";output.className="result-box lose";return;}
-    if(bank<=0){output.innerHTML="💸 Kasan bitti!";output.className="result-box lose";return;}
+  // invert mode
+  if(invertMode==='ON' && (recSide==='S' || recSide==='B')){
+    recSide = (recSide==='S') ? 'B' : 'S';
+    recSource = recSource + '-INV';
+  }
+  lastConfShown = conf;
+  $('recoConf').textContent = (recSide==='NONE')?'—':(Math.round(conf*100)+'%');
+  updateAnalytics();
+}
 
-    let betAmount=sequence[step]*baseBet;
-    let win=diceValue>3; let change=0;
+/* =================== Stake ilerleme (çok modlu) =================== */
+let fiboA=1, fiboB=1; // Fibonacci için
+let paroliStreak=0;
 
-    if(win){
-      change=betAmount; bank+=change;
-      historyLog.push(`+ ₺${betAmount} Kazandın (Zar: ${diceValue}, Adım ${sequence[step]})`);
-      step++;
-      if(step>=sequence.length){output.innerHTML=`🎯 Seri tamamlandı! Yeniden ₺${sequence[0]*baseBet} ile başla.`; step=0;}
-      else{output.innerHTML=`✅ Kazandın! Şimdi ₺${sequence[step]*baseBet} oyna.`;}
-      output.className="result-box win";
+function boundedSoft(prev, inc){
+  const u = dynamicUnit();
+  const capU = prev + MAX_STEP_U*u;
+  const capP = Math.round(prev * (lockedSide ? MAX_STEP_MULT_LOCK : MAX_STEP_MULT));
+  return Math.min(prev + inc, capU, capP);
+}
+function currentDD(){ return Math.max(0, hwm - bank); }
+
+function kellyAdj(){
+  const wr = rollingWR();
+  const profile = riskProfiles[riskMode]||riskProfiles.NORMAL;
+  // Kelly-lite override
+  const kOverride = ai.kellyOverride;
+  const frac = (typeof kOverride==='number' && kOverride>=0 && kOverride<=1) ? kOverride : profile.kellyFrac;
+  if(wr===null || wr<=0.5) return 0;
+  return Math.min(0.35, (2*wr - 1) * frac);
+}
+
+/* ADAPTIVE (mevcut) */
+function dynamicK(dd, u){
+  if(dd <= 5*u) return 2;
+  if(dd <= 15*u) return 3;
+  return 4;
+}
+function nextAfterLoss_ADAPT(prev){
+  const u = dynamicUnit();
+  const dd = currentDD();
+  const K  = dynamicK(dd, u);
+  const target = Math.max(u, Math.ceil(dd / Math.max(1,K)));
+  const incNeed = Math.max(0, target - prev);
+  const profile = riskProfiles[riskMode]||riskProfiles.NORMAL;
+  MAX_STEP_MULT = profile.stepMult;
+  MAX_STEP_U    = profile.stepU;
+
+  const baseK = [1.00,1.15,1.25,1.35][Math.min(3, lossStreak)];
+  const last = histSig[histSig.length-1] || 'S';
+  const seriesLen = lastStreak(last);
+  const seriesMult = (seriesLen >= ADAPT_SERIES_LEN) ? 0.6 : 1.0;
+  let inc = Math.max(Math.ceil(baseK*u*seriesMult), incNeed, u);
+  let ns  = boundedSoft(prev, inc);
+  const kAdj = kellyAdj();
+  ns = Math.round(ns * (1 + kAdj));
+  if(lockedSide){
+    const lockedAgainst = (lockedSide!==last);
+    if(lockedAgainst){ ns = Math.max(u, Math.round(ns * 0.85)); }
+  }
+  return Math.max(u, ns);
+}
+function nextAfterWin_ADAPT(prev){
+  const u = dynamicUnit();
+  if(bank < hwm) return Math.max(u, Math.round(prev));
+  let ns = Math.max(u, prev - 2*u);
+  return ns;
+}
+
+/* D'Alembert */
+function nextAfterLoss_DALEM(prev){
+  const u = dynamicUnit();
+  return Math.max(u, prev + u);
+}
+function nextAfterWin_DALEM(prev){
+  const u = dynamicUnit();
+  return Math.max(u, prev - u);
+}
+
+/* Fibonacci */
+function nextAfterLoss_FIBO(prev){
+  const u = dynamicUnit();
+  const next = fiboA + fiboB; fiboA = fiboB; fiboB = next;
+  return Math.max(u, next*u);
+}
+function onWin_FIBO(){
+  const u = dynamicUnit();
+  fiboA = 1; fiboB = 1;
+  return Math.max(u, u);
+}
+
+/* Paroli (pozitif progression) */
+function nextAfterWin_PAROLI(prev){
+  const u = dynamicUnit();
+  paroliStreak = Math.min(paroliMax, paroliStreak+1);
+  const mults = [1.2,1.3,1.4,1.5];
+  const k = Math.min(mults.length-1, paroliStreak-1);
+  return Math.max(u, Math.round(prev * mults[k]));
+}
+function onLoss_PAROLI(){
+  paroliStreak = 0;
+  return dynamicUnit();
+}
+
+/* Ortak yönlendirici */
+function nextAfterLoss(prev){
+  if(strategyMode==='DALEM') return nextAfterLoss_DALEM(prev);
+  if(strategyMode==='FIBO')  return nextAfterLoss_FIBO(prev);
+  return nextAfterLoss_ADAPT(prev);
+}
+function nextAfterWin(prev){
+  if(strategyMode==='DALEM') return nextAfterWin_DALEM(prev);
+  if(strategyMode==='PAROLI') return nextAfterWin_PAROLI(prev);
+  if(strategyMode==='FIBO')   return onWin_FIBO();
+  return nextAfterWin_ADAPT(prev);
+}
+
+/* =================== Emniyet: Stop-Loss / Stop-Win =================== */
+function checkSafetyHalt(){
+  const pnl = bank - baseBank;
+  const sl = (stopLossPct/100)*baseBank;
+  const sw = (stopWinPct/100)*baseBank;
+  if(pnl <= -Math.abs(sl) || pnl >= Math.abs(sw)){
+    halted = true;
+    $('haltPill').style.display='inline-flex';
+    $('btnResume').style.display='inline-flex';
+  }
+}
+
+/* =================== Parametre adaptasyonu =================== */
+function adaptParams(){
+  const W=60;
+  const recent = histBetWR.slice(-W);
+  if(recent.length>=20){
+    const wr = recent.reduce((a,b)=>a+b,0)/recent.length;
+    if(wr<=0.45){ Z_THR = Math.max(0.95, Z_THR-0.02); W_SIGNAL = Math.max(10, W_SIGNAL-1); SERIES_LOCK = Math.max(3, SERIES_LOCK-1); }
+    else if(wr>=0.57){ Z_THR = Math.min(1.25, Z_THR+0.02); W_SIGNAL = Math.min(16, W_SIGNAL+1); SERIES_LOCK = Math.min(6, SERIES_LOCK+1); }
+  }
+}
+
+/* =================== UI =================== */
+function refreshKPI(){
+  $('kBank').textContent = money(bank);
+  $('kStake').textContent = (recSide==='NONE'||recSide==='PASS')?'—':String(stake);
+  $('kUnit').textContent  = String(dynamicUnit());
+  $('kHWM').textContent   = money(hwm);
+  $('kWL').textContent    = `${wCount} / ${lCount}`;
+  $('kPNL').textContent   = (bank-baseBank>=0?'+':'-')+money(Math.abs(bank-baseBank));
+  $('kLStreak').textContent = String(lossStreak);
+  const wr = rollingWR(); $('kWR').textContent = wr===null?'—':(Math.round(wr*100)+'%');
+  $('kShadow').textContent = (shadowPNL>=0?'+':'-')+money(Math.abs(shadowPNL));
+  const tag = (recSource==='PAUSE'?'Flip-Flop/Emniyet': (recSource==='PAIR'?'2xRule': (recSource==='LOCK'?'Kilit': (recSource==='CONF-PASS'?'PASS': (recSource==='PATTERN'?'Pattern':recSource)))));
+  setRecoBadge(recSide, (recSide==='NONE'||!tag)?'':tag);
+  $('recoStake').textContent = (recSide==='NONE'||recSide==='PASS')?'—':String(stake);
+  $('kSM').textContent = `${strategyMode==='ADAPTIVE'?'Adaptive':strategyMode} / ${riskMode[0]+riskMode.slice(1).toLowerCase()}`;
+  $('invPill').style.display = (invertMode==='ON')?'inline-flex':'none';
+}
+
+/* Tablo satırı + log */
+let nHandsDisp=0;
+const logRows = [];
+function addRow(src, recUsed, actual, usedStake, outcomeStr, pnl, shadowThis){
+  nHands++; nHandsDisp++;
+  const tr = document.createElement('tr');
+  const recTxt = recUsed==='NONE'?'—':(recUsed==='S'?'Small':(recUsed==='B'?'Big':'PASS'));
+  const actTxt = actual==='S'?'Small':(actual==='B'?'Big':'Tie');
+  tr.innerHTML = `
+    <td>${nHandsDisp}</td>
+    <td>${src}</td>
+    <td>${recTxt}</td>
+    <td>${actTxt}</td>
+    <td>${(recUsed==='NONE'||recUsed==='PASS')?'—':usedStake}</td>
+    <td>${outcomeStr}
+      ${(recUsed!=='NONE' && recUsed!=='PASS')?`<div class="sub" style="opacity:.8">Gölge: ${(shadowThis>=0?'+':'-')+money(Math.abs(shadowThis))} • Toplam: ${(shadowPNL>=0?'+':'-')+money(Math.abs(shadowPNL))}</div>`:''}
+    </td>
+    <td>${(recUsed==='NONE'||recUsed==='PASS')?'—':(pnl>=0?'+':'-')+money(Math.abs(pnl))}</td>
+    <td>${money(bank)}</td>
+  `;
+  const tb = $('tbody'); if(tb.firstChild) tb.insertBefore(tr, tb.firstChild); else tb.appendChild(tr);
+  $('live').textContent = `El ${nHandsDisp}: ${actTxt} geldi, ${outcomeStr}.`;
+  // log
+  logRows.push({i:nHandsDisp, src, rec:recTxt, actual:actTxt, stake:(recUsed==='NONE'||recUsed==='PASS')?0:usedStake, outcome:outcomeStr, pnl: (recUsed==='NONE'||recUsed==='PASS')?0:pnl, bank:bank, conf: Math.round(lastConfShown*100)});
+}
+
+/* =================== Sonuç işlence =================== */
+function onOutcome(tag){ // 'S'|'B'|'T'
+  if(warmActive){ warmAdd(tag); return; }
+
+  // decay & adapt
+  decayBandit();      
+  adaptParams();
+
+  // Emniyet aktifse öneri NONE kalsın, sadece kayıt
+  const recUsed = (halted ? 'NONE' : recSide);
+  const srcUsed = recSource;
+  let usedStake = (recUsed==='NONE'||recUsed==='PASS') ? 0 : stake;
+
+  // Tie meta: stake azalt
+  if(usedStake>0 && tieMetaEffect() && passMode==='OFF'){
+    usedStake = Math.max(1, Math.round(usedStake*(1 - tieReducePct/100)));
+  }
+
+  // Markov güncellemesi için önceki k anahtarı
+  const prevSeqForMarkov = histSig.slice(-ai.kOrder).join('');
+
+  histAll.push(tag);
+  if(tag==='T'){ const last = histSig[histSig.length-1]; if(last) histSig.push(last); }
+  else { histSig.push(tag); }
+  if(histSig.length>6000) histSig.shift();
+
+  // ML: Markov sayım güncelle
+  if(prevSeqForMarkov.length===ai.kOrder){
+    const key = prevSeqForMarkov;
+    const m = ai.markov;
+    if(!m[key]) m[key] = {S:0,B:0};
+    if(tag==='S') m[key].S++; else if(tag==='B') m[key].B++;
+  }
+
+  // Meta: son uzman tahminlerini değerlendir
+  evaluateExperts(tag);
+
+  let pnl=0, out='Bekle', shadowThis=0;
+
+  if(recUsed!=='NONE' && recUsed!=='PASS'){
+    const isWin = (tag!=='T' && recUsed===tag);
+    if(isWin){
+      pnl = +usedStake; bank += pnl; out='KAZAN'; wCount++; lossStreak=0; winStreak++;
+      if(srcUsed.includes('TREND')) beta.TREND.a+=1; else if(srcUsed.includes('MEAN')) beta.MEAN.a+=1;
+      if(srcUsed==='LOCK'){ SERIES_LOCK = Math.max(3, Math.round(SERIES_LOCK*0.98)); }
+      stake = nextAfterWin(stake);
+      histBetWR.push(1); if(histBetWR.length>W_WINRATE) histBetWR.shift();
+      if(lockedSide){ lockLossCount = 0; }
     }else{
-      change=-betAmount; bank+=change;
-      historyLog.push(`- ₺${betAmount} Kaybettin (Zar: ${diceValue}, Adım ${sequence[step]})`);
-      step=0;
-      output.innerHTML=`❌ Kaybettin! Tekrar ₺${sequence[0]*baseBet} oyna.`; output.className="result-box lose";
+      pnl = -usedStake; bank += pnl; out='KAYIP'; lCount++; lossStreak++; winStreak=0;
+      if(srcUsed.includes('TREND')) beta.TREND.b+=1; else if(srcUsed.includes('MEAN')) beta.MEAN.b+=1;
+      if(lockedSide && recUsed===lockedSide){
+        lockLossCount++;
+        const z = zScore();
+        const zOpp = (lockedSide==='S' && z<=-Z_THR) || (lockedSide==='B' && z>=Z_THR);
+        if(zOpp || lockLossCount>=HYST_LOSS){ lockedSide=null; oppSinceLockSig=0; lockLossCount=0; }
+        if(!lockedSide){ SERIES_LOCK = Math.min(6, Math.round(SERIES_LOCK*1.05)); }
+      }
+      if(strategyMode==='PAROLI'){ stake = onLoss_PAROLI(); }
+      stake = nextAfterLoss(stake);
+      histBetWR.push(0); if(histBetWR.length>W_WINRATE) histBetWR.shift();
     }
 
-    let profit=bank-initialBank;
-    let profitText=profit>=0?`💰 Kâr: ₺${profit}`:`📉 Zarar: ₺${profit}`;
-    document.getElementById('bankDisplay').innerHTML=`Kasa: ₺${bank} (${profitText})`;
-    history.innerHTML="<strong>Oyun Geçmişi:</strong><br>"+historyLog.join("<br>");
+    // What-if (karşı yön)
+    const altSide = (recUsed==='S') ? 'B' : 'S';
+    const altWin  = (tag!=='T' && altSide===tag);
+    shadowThis = altWin ? +usedStake : -usedStake;
+    shadowPNL += shadowThis;
+  }else{
+    // PASS veya NONE: banditleri hafifçe çürüt
+    beta.TREND.a*=DECAY; beta.TREND.b*=DECAY;
+    beta.MEAN.a *=DECAY; beta.MEAN.b *=DECAY;
+    out = (recUsed==='PASS')?'PASS':'Bekle';
   }
 
-  function resetGame(){
-    step=0; historyLog=[]; bank=initialBank;
-    document.getElementById('output').innerHTML="Başlamak için kasa gir.";
-    document.getElementById('output').className="result-box";
-    document.getElementById('history').innerHTML="<strong>Oyun Geçmişi:</strong><br>";
-    document.getElementById('bankDisplay').innerHTML=`Kasa: ₺${bank}`;
+  const prevHWM = hwm;
+  if(bank>hwm) hwm = bank;
+  if(hwm>prevHWM){ stake = dynamicUnit(); }
+  if(bank>=hwm && (bank-baseBank) >= CYCLE_TP_U*dynamicUnit()){ stake = dynamicUnit(); }
+  maxStake = Math.max(maxStake, stake);
+
+  // Emniyet kontrol
+  checkSafetyHalt();
+
+  addRow(srcUsed, recUsed, tag, usedStake, out, pnl, shadowThis);
+
+  // Gölge inversiyon uyarısı
+  const realPNL = bank - baseBank;
+  if(shadowPNL - realPNL > 5*dynamicUnit() && histBetWR.length>=20){
+    $('invPill').title = 'Gölge PnL önde: invert mode deneyebilirsin (Ayarlar)';
   }
-</script>
-</body>
+
+  // Persist
+  if(ai.persist){ saveState(); }
+
+  computeNextRecommendation();
+  refreshKPI();
+}
+
+/* =================== Warm-up =================== */
+function warmUpdateUI(){ $('wStat').textContent = `${warmSeq.length}/${MIN_WARMUP}`; }
+function warmAdd(tag){
+  if(!warmActive) return;
+  if(warmSeq.length>=MIN_WARMUP) return;
+  warmSeq.push(tag); warmUpdateUI();
+  if(warmSeq.length===MIN_WARMUP){
+    for(const t of warmSeq){
+      histAll.push(t);
+      if(t==='T'){ const last = histSig[histSig.length-1]; if(last) histSig.push(last); }
+      else { histSig.push(t); }
+    }
+    warmSeq.length = 0; warmActive = false; $('warmPanel').style.display = 'none';
+    // warm-up sonrası
+    unit  = autoUnitFromBank(baseBank);
+    stake = unit; fiboA=1;fiboB=1; paroliStreak=0;
+    computeNextRecommendation();
+    refreshKPI();
+  }
+}
+function warmUndo(){ if(warmActive && warmSeq.length>0){ warmSeq.pop(); warmUpdateUI(); } }
+function warmClear(){ if(warmActive){ warmSeq.length=0; warmUpdateUI(); } }
+
+/* =================== Undo / Clear / Apply =================== */
+function replay(){
+  const sm = strategyMode, rm=riskMode, pm=passMode, sl=stopLossPct, sw=stopWinPct, par=paroliMax, tr=tieReducePct, inv=invertMode;
+  bank = baseBank; hwm = baseBank;
+  unit = autoUnitFromBank(baseBank); stake = unit; maxStake=unit;
+  lossStreak=0; winStreak=0; nHands=0; nHandsDisp=0; wCount=0; lCount=0;
+  histAll.length=0; histSig.length=0; histBetWR.length=0;
+  lockedSide=null; oppSinceLockSig=0; lockLossCount=0; ffHold=false;
+  recSide='NONE'; recSource='NONE'; shadowPNL=0; halted=false;
+  beta.TREND={a:1,b:1}; beta.MEAN={a:1,b:1}; Z_THR = parseFloat($('aiZThr').value)||Z_THR; SERIES_LOCK = 4; W_SIGNAL=parseInt($('aiWsig').value)||12;
+  $('tbody').innerHTML='';
+  warmActive = true; warmSeq.length=0; $('warmPanel').style.display = 'block'; warmUpdateUI();
+  $('haltPill').style.display='none'; $('btnResume').style.display='none';
+  // restore settings
+  strategyMode=sm; riskMode=rm; passMode=pm; stopLossPct=sl; stopWinPct=sw; paroliMax=par; tieReducePct=tr; invertMode=inv;
+  // AI resetler
+  aiReset(false);
+  refreshKPI();
+}
+function undo(){
+  if(warmActive){ warmUndo(); return; }
+  if(!histAll.length) return;
+  const copy = histAll.slice(0,-1);
+  // reset ve yeniden yürüt
+  bank = baseBank; hwm = baseBank;
+  unit = autoUnitFromBank(baseBank); stake=unit; maxStake=unit;
+  lossStreak=0; winStreak=0; nHands=0; nHandsDisp=0; wCount=0; lCount=0;
+  histAll.length=0; histSig.length=0; histBetWR.length=0;
+  lockedSide=null; oppSinceLockSig=0; lockLossCount=0; ffHold=false;
+  recSide='NONE'; recSource='NONE'; shadowPNL=0; halted=false;
+  beta.TREND={a:1,b:1}; beta.MEAN={a:1,b:1}; Z_THR = parseFloat($('aiZThr').value)||1.10; SERIES_LOCK = 4; W_SIGNAL=parseInt($('aiWsig').value)||12;
+  $('tbody').innerHTML='';
+  warmActive=false; $('warmPanel').style.display='none';
+  $('haltPill').style.display='none'; $('btnResume').style.display='none';
+  aiReset(false);
+  for(const t of copy){ computeNextRecommendation(); onOutcome(t); }
+  computeNextRecommendation(); refreshKPI();
+}
+function clearAll(){ if(confirm('Tüm kayıtları silmek istiyor musun?')){ replay(); } }
+function apply(){
+  const b = parseFloat($('bankIn').value);
+  if(!Number.isFinite(b)||b<0){alert('Geçerli bank gir.');return}
+  baseBank=b;
+
+  strategyMode = $('strategyMode').value;
+  riskMode     = $('riskMode').value;
+  passMode     = $('passMode').value;
+  stopLossPct  = parseFloat($('stopLossPct').value)||0;
+  stopWinPct   = parseFloat($('stopWinPct').value)||0;
+  paroliMax    = Math.max(1, parseInt($('paroliMax').value)||3);
+  tieReducePct = Math.max(0, Math.min(80, parseInt($('tieReduce').value)||0));
+  invertMode   = $('invertMode').value;
+
+  const profile = riskProfiles[riskMode]||riskProfiles.NORMAL;
+  MAX_STEP_MULT = profile.stepMult;
+  MAX_STEP_U    = profile.stepU;
+
+  // Para yönetimi seçicisi ile senkron
+  $('aiMM').value = strategyMode;
+
+  replay(); // unit otomatik hesaplanır
+}
+
+/* =================== Import & Hızlı Optimize =================== */
+function parseLinesToTags(text){
+  const tags = [];
+  const lines = text.split(/\s+/);
+  for(const raw of lines){
+    const t = raw.trim().toLowerCase();
+    if(!t) continue;
+    if(/^s|small$/.test(t)) { tags.push('S'); continue; }
+    if(/^b|big$/.test(t))   { tags.push('B'); continue; }
+    if(/^t|tie$/.test(t))   { tags.push('T'); continue; }
+  }
+  return tags;
+}
+function seedLearningFromDataset(){
+  beta.TREND.a = 3; beta.TREND.b = 2;
+  beta.MEAN.a  = 2; beta.MEAN.b  = 3;
+  Z_THR = parseFloat($('aiZThr').value)||1.10; SERIES_LOCK = 3;
+}
+function importAndSim(text){
+  const tags = parseLinesToTags(text);
+  if(tags.length===0){ alert('Uygun satır bulunamadı.'); return; }
+
+  seedLearningFromDataset();
+  warmActive=false; $('warmPanel').style.display='none';
+  unit = autoUnitFromBank(baseBank); stake=unit; fiboA=1;fiboB=1; paroliStreak=0;
+  computeNextRecommendation(); refreshKPI();
+  for(const t of tags){ onOutcome(t); }
+  computeNextRecommendation(); refreshKPI();
+}
+
+/* Basit hızlı optimizer: farklı Z_THR adaylarını tarar */
+function quickOptimize(){
+  if(histAll.length<30){ alert('Optimize için en az 30 gerçek sonuç gerekli.'); return; }
+  const dataset = histAll.slice();
+  const candidates = [0.98,1.06,1.10,1.14,1.18,1.22];
+  let best = {z:Z_THR, pnl:-1e9};
+
+  for(const z of candidates){
+    let tmpBank=baseBank, tmpHWM=baseBank;
+    let tmpStake = autoUnitFromBank(baseBank);
+    let tmpHistSig=[], tmpLoss=0;
+    function tmpZ(){
+      const w = tmpHistSig.slice(-W_SIGNAL), n=w.length; if(n===0) return 0;
+      const s=w.filter(x=>x==='S').length; const mean=n*0.5; const sd=Math.sqrt(n*0.25); if(sd===0) return 0;
+      return (s-mean)/sd;
+    }
+    for(const tag of dataset){
+      let sCand=null;
+      const sLen = (()=>{let c=0; for(let i=tmpHistSig.length-1;i>=0;i--){ if(tmpHistSig[i]==='S') c++; else break; } return c;})();
+      const bLen = (()=>{let c=0; for(let i=tmpHistSig.length-1;i>=0;i--){ if(tmpHistSig[i]==='B') c++; else break; } return c;})();
+      if(sLen>=2) sCand='S'; else if(bLen>=2) sCand='B';
+      else{
+        const zz=tmpZ();
+        if(zz>=z) sCand='B'; else if(zz<=-z) sCand='S';
+        else sCand = tmpHistSig[tmpHistSig.length-1]||'S';
+      }
+      if(tag!=='T' && sCand===tag){ tmpBank+=tmpStake; tmpLoss=0; tmpStake=Math.max(autoUnitFromBank(baseBank), tmpStake-2*autoUnitFromBank(baseBank)); }
+      else if(sCand!=='NONE'){ tmpBank-=tmpStake; tmpLoss++; tmpStake=Math.max(autoUnitFromBank(baseBank), tmpStake + autoUnitFromBank(baseBank)); }
+      if(tag==='T'){ const last=tmpHistSig[tmpHistSig.length-1]; if(last) tmpHistSig.push(last); } else tmpHistSig.push(tag);
+      if(tmpBank>tmpHWM) tmpHWM=tmpBank;
+    }
+    const pnl = tmpBank - baseBank;
+    if(pnl>best.pnl) best={z, pnl};
+  }
+  alert(`Hızlı Optimize: En iyi Z_THR ≈ ${best.z.toFixed(2)} • Tahmini PnL: ${best.pnl>0?'+':''}${best.pnl.toFixed(2)} TL`);
+  Z_THR = best.z;
+  $('aiZThr').value = best.z.toFixed(2);
+  $('aiZThrVal').textContent = best.z.toFixed(2);
+  computeNextRecommendation(); refreshKPI(); updateAnalytics();
+}
+
+/* =================== Bağlantılar (mevcut) =================== */
+function guardTap(btn, pulse, cb){
+  if(btn._lock) return; btn._lock=true;
+  btn.classList.remove(pulse); void btn.offsetWidth; btn.classList.add(pulse);
+  try{ cb(); } finally { setTimeout(()=>{ btn._lock=false; }, 220); }
+}
+$('btnSmall').addEventListener('click',()=>guardTap($('btnSmall'),'pulse-win', ()=>onOutcome('S')));
+$('btnBig').addEventListener('click',  ()=>guardTap($('btnBig'),'pulse-loss', ()=>onOutcome('B')));
+$('btnTie').addEventListener('click',  ()=>guardTap($('btnTie'),'pulse-tie',  ()=>onOutcome('T')));
+$('btnUndo').addEventListener('click', ()=>undo());
+$('btnClear').addEventListener('click',()=>clearAll());
+$('btnResume').addEventListener('click',()=>{ halted=false; $('haltPill').style.display='none'; $('btnResume').style.display='none'; computeNextRecommendation(); refreshKPI(); });
+$('apply').addEventListener('click',  ()=>apply());
+$('reset').addEventListener('click',  ()=>{ $('bankIn').value=5000;
+  $('strategyMode').value='ADAPTIVE';
+  $('riskMode').value='NORMAL';
+  $('passMode').value='MEDIUM';
+  $('stopLossPct').value=10; $('stopWinPct').value=12;
+  $('paroliMax').value=3; $('tieReduce').value=30;
+  $('invertMode').value='OFF';
+  apply(); });
+
+/* Warm-up */
+$('wSmall').addEventListener('click', ()=>guardTap($('wSmall'),'pulse-win', ()=>warmAdd('S')));
+$('wBig').addEventListener('click',   ()=>guardTap($('wBig'),'pulse-loss',()=>warmAdd('B')));
+$('wTie').addEventListener('click',   ()=>guardTap($('wTie'),'pulse-tie', ()=>warmAdd('T')));
+$('wUndo').addEventListener('click',  ()=>warmUndo());
+$('wClear').addEventListener('click', ()=>warmClear());
+
+/* Import & Optimize */
+$('btnImport').addEventListener('click', ()=>importAndSim($('pasteArea').value));
+$('btnImportClear').addEventListener('click', ()=>{$('pasteArea').value='';});
+$('btnQuickOpt').addEventListener('click', ()=>quickOptimize());
+
+/* Kısayollar */
+document.addEventListener('keydown',(e)=>{
+  const t = e.target.tagName.toLowerCase();
+  if(t==='input'||t==='select'||t==='textarea') return;
+  if(e.key==='s'||e.key==='S'){ e.preventDefault(); $('btnSmall').click(); }
+  if(e.key==='b'||e.key==='B'){ e.preventDefault(); $('btnBig').click(); }
+  if(e.key==='t'||e.key==='T'){ e.preventDefault(); $('btnTie').click(); }
+  if(e.key==='z'||e.key==='Z'){ e.preventDefault(); $('btnUndo').click(); }
+  if(e.key==='1'){ e.preventDefault(); $('wSmall').click(); }
+  if(e.key==='2'){ e.preventDefault(); $('wBig').click(); }
+  if(e.key==='3'){ e.preventDefault(); $('wTie').click(); }
+  if(e.key==='Backspace'){ if(warmActive){ e.preventDefault(); $('wUndo').click(); } }
+});
+
+/* =================== AI-INJECT:scripts =================== */
+/* ---- AI durum ve yardımcılar ---- */
+const ai = {
+  kOrder: 3,
+  markov: Object.create(null),
+  passMax: 3,
+  passConsec: 0,
+  persist: true,
+  mixMode: 'WINNER',
+  weights: {TREND:1, MEAN:1, FLIP:1},
+  expertPerf: {
+    TREND:[], MEAN:[], FLIP:[]
+  },
+  winWin: {short:50, long:100},
+  lastExperts: null,
+  kpi: {z:0,std:0,hr50:'—',hr100:'—',active:'—',mlConf:'—'},
+  kellyOverride: null
+};
+
+function saveState(){
+  const state = {
+    baseBank, bank, hwm, stake, lossStreak, winStreak, nHands, wCount, lCount,
+    histAll, histSig, histBetWR, beta, Z_THR, W_SIGNAL, SERIES_LOCK,
+    strategyMode, riskMode, passMode, stopLossPct, stopWinPct, paroliMax, tieReducePct, invertMode,
+    ai
+  };
+  try{ localStorage.setItem('sicbo_state_v3', JSON.stringify(state)); }catch(_){}
+}
+function loadState(){
+  try{
+    const s = JSON.parse(localStorage.getItem('sicbo_state_v3')||'null');
+    if(!s) return;
+    // Temel
+    baseBank=s.baseBank; bank=s.bank; hwm=s.hwm; stake=s.stake;
+    lossStreak=s.lossStreak; winStreak=s.winStreak; nHands=s.nHands; wCount=s.wCount; lCount=s.lCount;
+    histAll.length=0; histSig.length=0; histBetWR.length=0;
+    histAll.push(...s.histAll||[]); histSig.push(...s.histSig||[]); histBetWR.push(...s.histBetWR||[]);
+    beta.TREND=s.beta?.TREND||{a:1,b:1}; beta.MEAN=s.beta?.MEAN||{a:1,b:1};
+    Z_THR=s.Z_THR||Z_THR; W_SIGNAL=s.W_SIGNAL||W_SIGNAL; SERIES_LOCK=s.SERIES_LOCK||SERIES_LOCK;
+    strategyMode=s.strategyMode||strategyMode; riskMode=s.riskMode||riskMode; passMode=s.passMode||passMode;
+    stopLossPct=s.stopLossPct||stopLossPct; stopWinPct=s.stopWinPct||stopWinPct;
+    paroliMax=s.paroliMax||paroliMax; tieReducePct=s.tieReducePct||tieReducePct; invertMode=s.invertMode||invertMode;
+    // AI
+    if(s.ai){
+      ai.kOrder=s.ai.kOrder||3; ai.markov=s.ai.markov||Object.create(null);
+      ai.passMax=s.ai.passMax||3; ai.mixMode=s.ai.mixMode||'WINNER'; ai.weights=s.ai.weights||{TREND:1,MEAN:1,FLIP:1};
+      ai.expertPerf=s.ai.expertPerf||{TREND:[],MEAN:[],FLIP:[]};
+      ai.persist=s.ai.persist!==false; ai.kellyOverride=s.ai.kellyOverride??null;
+    }
+    warmActive=false; $('warmPanel').style.display='none';
+    // UI yansıt
+    $('bankIn').value = baseBank;
+    $('strategyMode').value=strategyMode; $('riskMode').value=riskMode; $('passMode').value=passMode;
+    $('stopLossPct').value=stopLossPct; $('stopWinPct').value=stopWinPct;
+    $('paroliMax').value=paroliMax; $('tieReduce').value=tieReducePct; $('invertMode').value=invertMode;
+    $('aiZThr').value=Z_THR.toFixed(2); $('aiZThrVal').textContent=Z_THR.toFixed(2);
+    $('aiWsig').value=W_SIGNAL; $('aiKOrder').value=ai.kOrder; $('aiKDisp').textContent=ai.kOrder;
+    $('aiMixMode').value=ai.mixMode; $('aiWTrend').value=ai.weights.TREND; $('aiWMean').value=ai.weights.MEAN; $('aiWFlip').value=ai.weights.FLIP;
+    $('aiPassMax').value=ai.passMax; $('aiPersist').checked=ai.persist; $('aiMM').value=strategyMode;
+  }catch(_){}
+}
+
+/* Z ve std hesap */
+function getZStats(){
+  const w = histSig.slice(-W_SIGNAL), n=w.length; if(n===0) return {z:0,std:0};
+  const s=w.filter(x=>x==='S').length; const p=s/n; const sd = Math.sqrt(n*0.25);
+  const z = sd===0?0:(s - n*0.5)/sd;
+  const std = Math.sqrt(p*(1-p)); // Bernoulli std (p)
+  return {z, std};
+}
+
+/* ---- ML: Markov ---- */
+function markovPredict(){
+  const k = ai.kOrder;
+  if(histSig.length<k) return null;
+  const key = histSig.slice(-k).join('');
+  const counts = ai.markov[key] || {S:0, B:0};
+  // Laplace düzeltme
+  const pS = (counts.S + 1) / (counts.S + counts.B + 2);
+  const pB = 1 - pS;
+  const side = pS>=pB ? 'S' : 'B';
+  const conf = Math.abs(pS - 0.5) * 2; // 0..1
+  return {side, conf, key, counts};
+}
+
+/* ---- Uzmanlar ---- */
+function expertTrend(){
+  const sLen = lastStreak('S'), bLen = lastStreak('B');
+  if(sLen===0 && bLen===0) return null;
+  return {side: (sLen>=bLen?'S':'B'), conf:0.5};
+}
+function expertMean(){
+  const z = zScore();
+  if(Math.abs(z)<Z_THR) return null;
+  return {side: (z>0?'B':'S'), conf: Math.min(1, (Math.abs(z)-Z_THR)/ (1.6 - Z_THR + 1e-9) )};
+}
+function expertFlip(){
+  if(histSig.length===0) return null;
+  const last = histSig[histSig.length-1];
+  return {side: (last==='S'?'B':'S'), conf:.45};
+}
+
+// Uzman performansını güncelle (rolling 50/100)
+function evaluateExperts(actualTag){
+  const pred = ai.lastExperts;
+  if(!pred) return;
+  ['TREND','MEAN','FLIP'].forEach(k=>{
+    const p = pred[k];
+    if(!p) return;
+    const hit = (actualTag!=='T' && p.side===actualTag) ? 1 : 0;
+    ai.expertPerf[k].push(hit);
+    if(ai.expertPerf[k].length>ai.winWin.long) ai.expertPerf[k].shift();
+  });
+}
+
+// Uzmanları çağır ve meta-karar ver
+function expertsDecision(forceWinner=false){
+  const m = markovPredict();
+  const t = expertTrend();
+  const r = expertMean();
+  const f = expertFlip();
+
+  // Sonraki elde değerlendirmek üzere sakla
+  ai.lastExperts = {
+    TREND: t, MEAN: r, FLIP: f
+  };
+
+  // Skorlar
+  function hr(arr, n){
+    if(!arr.length) return 0;
+    const sub = arr.slice(-n);
+    return sub.reduce((a,b)=>a+b,0)/sub.length;
+    }
+  const hrt = hr(ai.expertPerf.TREND, ai.winWin.short);
+  const hrm = hr(ai.expertPerf.MEAN,  ai.winWin.short);
+  const hrf = hr(ai.expertPerf.FLIP,  ai.winWin.short);
+  const hrtL= hr(ai.expertPerf.TREND, ai.winWin.long);
+  const hrmL= hr(ai.expertPerf.MEAN,  ai.winWin.long);
+  const hrfL= hr(ai.expertPerf.FLIP,  ai.winWin.long);
+  const score = {
+    TREND: 0.6*hrt + 0.4*hrtL,
+    MEAN:  0.6*hrm + 0.4*hrmL,
+    FLIP:  0.6*hrf + 0.4*hrfL
+  };
+
+  ai.kpi.hr50 = Math.round((hrt*100))+' / '+Math.round((hrm*100))+' / '+Math.round((hrf*100))+' %';
+  ai.kpi.hr100= Math.round((hrtL*100))+' / '+Math.round((hrmL*100))+' / '+Math.round((hrfL*100))+' %';
+
+  // Ağırlıklı karışım
+  let rec=null;
+  if(ai.mixMode==='WEIGHTED' && (t||r||f)){
+    let sScore = 0, bScore=0, totalW=0;
+    if(t){ (t.side==='S'? sScore+=ai.weights.TREND*t.conf : bScore+=ai.weights.TREND*t.conf); totalW+=ai.weights.TREND*t.conf; }
+    if(r){ (r.side==='S'? sScore+=ai.weights.MEAN *r.conf : bScore+=ai.weights.MEAN *r.conf); totalW+=ai.weights.MEAN *r.conf; }
+    if(f){ (f.side==='S'? sScore+=ai.weights.FLIP *f.conf : bScore+=ai.weights.FLIP *f.conf); totalW+=ai.weights.FLIP *f.conf; }
+    if(totalW>0){
+      const side = (sScore>=bScore)?'S':'B';
+      const conf = Math.min(1, Math.abs(sScore-bScore)/(totalW||1));
+      rec = {side, source:'META-MIX', conf: Math.max(conf, 0.45)};
+    }
+  }
+
+  // Winner-takes-all (varsayılan)
+  if(!rec){
+    const order = Object.entries(score).sort((a,b)=>b[1]-a[1]);
+    const best = (order[0]&&order[0][0])||'TREND';
+    let pick = null;
+    if(best==='TREND') pick = t;
+    if(best==='MEAN')  pick = r;
+    if(best==='FLIP')  pick = f;
+    if(!pick){ // fallback: mevcut uzmanlardan ilk uygun
+      pick = t || r || f;
+    }
+    if(pick){
+      rec = {side: pick.side, source: 'META:'+best, conf: Math.max(0.5, pick.conf||0.5)};
+    }
+  }
+
+  // Markov sinyalini destekleyici olarak ele al
+  if(m && rec){
+    ai.kpi.mlConf = Math.round(m.conf*100)+'%';
+    if(m.side===rec.side){ rec.conf = Math.min(1, rec.conf + m.conf*0.25); rec.source += '+MARKOV'; }
+    else{
+      // Çelişki varsa güveni hafif azalt
+      rec.conf = Math.max(0.35, rec.conf - m.conf*0.15);
+    }
+  }else if(m && !rec){
+    rec = {side: m.side, source:'MARKOV', conf: Math.max(0.45, m.conf)};
+  }
+
+  // forceWinner: her durumda bir taraf döndür
+  if(forceWinner && !rec){
+    const last = histSig[histSig.length-1]||'S';
+    rec = {side:last, source:'META:FALLBACK', conf:.4};
+  }
+
+  return rec;
+}
+
+/* ---- Analytics UI güncelleme ---- */
+function updateAnalytics(){
+  const {z,std} = getZStats();
+  ai.kpi.z = z; ai.kpi.std = std;
+  $('aiZ').textContent = z.toFixed(2);
+  $('aiStd').textContent = std?std.toFixed(3):'—';
+  $('aiZThrVal').textContent = Z_THR.toFixed(2);
+  $('aiKDisp').textContent = ai.kOrder;
+  $('aiMLConf').textContent = ai.kpi.mlConf;
+
+  // Status badge
+  const el = $('aiStatus');
+  el.className = 'ai-badge neutral';
+  let text = 'Sinyal yok';
+  if(recSource.startsWith('META')){ el.classList.add('trend'); text = recSource.replace('META:',''); }
+  if(recSource.startsWith('META:MEAN')){ el.className='ai-badge mean'; text='Mean-revert'; }
+  if(recSource.startsWith('META:FLIP')){ el.className='ai-badge flip'; text='Flip-flop'; }
+  if(recSource==='TREND' || recSource.includes('TREND')){ el.className='ai-badge trend'; text='Trend'; }
+  if(recSource==='MEAN'  || recSource.includes('MEAN')){ el.className='ai-badge mean'; text='Mean-revert'; }
+  if(recSource==='PATTERN' || recSource.includes('PATTERN')){ el.className='ai-badge neutral'; text='Pattern'; }
+  if(recSource==='CONF-PASS'){ el.className='ai-badge neutral'; text='PASS'; }
+  if(Math.abs(z)>=Z_THR){ text += ' • Z yüksek'; }
+  el.textContent = text;
+
+  // HR kartları
+  const h = ai.kpi;
+  $('aiHR50').textContent = h.hr50 || '—';
+  $('aiHR100').textContent= h.hr100 || '—';
+
+  // Aktif strateji
+  $('aiActiveStrat').textContent = recSource || '—';
+
+  // Öneri/stake görünür
+  refreshKPI();
+}
+
+/* ---- Panel event bağları ---- */
+$('aiZThr').addEventListener('input', e=>{
+  Z_THR = parseFloat(e.target.value)||Z_THR;
+  $('aiZThrVal').textContent = Z_THR.toFixed(2);
+  computeNextRecommendation(); updateAnalytics();
+});
+$('aiWsig').addEventListener('change', e=>{
+  const v = Math.max(8, Math.min(30, parseInt(e.target.value)||W_SIGNAL));
+  W_SIGNAL = v; e.target.value = v;
+  computeNextRecommendation(); updateAnalytics();
+});
+$('aiKOrder').addEventListener('change', e=>{
+  const v = Math.max(2, Math.min(6, parseInt(e.target.value)||ai.kOrder));
+  ai.kOrder = v; $('aiKDisp').textContent=v;
+  computeNextRecommendation(); updateAnalytics();
+});
+$('aiMixMode').addEventListener('change', e=>{ ai.mixMode = e.target.value; computeNextRecommendation(); });
+$('aiWTrend').addEventListener('change', e=>{ ai.weights.TREND = parseFloat(e.target.value)||1; });
+$('aiWMean').addEventListener('change', e=>{ ai.weights.MEAN  = parseFloat(e.target.value)||1; });
+$('aiWFlip').addEventListener('change', e=>{ ai.weights.FLIP  = parseFloat(e.target.value)||1; });
+$('aiPassMax').addEventListener('change', e=>{ ai.passMax = Math.max(0, parseInt(e.target.value)||3); });
+$('aiPersist').addEventListener('change', e=>{ ai.persist = !!e.target.checked; if(ai.persist) saveState(); });
+$('aiMM').addEventListener('change', e=>{ strategyMode = e.target.value; $('strategyMode').value=strategyMode; });
+$('aiKelly').addEventListener('change', e=>{
+  const v = e.target.value===''?null:Math.max(0, Math.min(1, parseFloat(e.target.value)));
+  ai.kellyOverride = v;
+});
+$('btnAISim').addEventListener('click', ()=>{
+  const seq = $('aiSeq').value.trim();
+  if(!seq){ alert('Dizi gir.'); return; }
+  importAndSim(seq);
+});
+$('btnExportCSV').addEventListener('click', ()=>{
+  const csv = exportCSV();
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url; a.download='sicbo_log.csv'; a.click(); URL.revokeObjectURL(url);
+});
+$('btnAIReset').addEventListener('click', ()=>aiReset(true));
+
+/* ---- CSV export ---- */
+function exportCSV(){
+  const headers = ['#','Kaynak','Öneri','Gerçek','Bahis','Sonuç','Net','Bank','Güven%'];
+  const rows = logRows.map(r=>[r.i,r.src,r.rec,r.actual,r.stake,r.outcome,r.pnl,r.bank,r.conf]);
+  return [headers.join(','), ...rows.map(x=>x.join(','))].join('\n');
+}
+
+/* ---- AI reset ---- */
+function aiReset(full=true){
+  ai.markov = Object.create(null);
+  ai.expertPerf = {TREND:[],MEAN:[],FLIP:[]};
+  ai.lastExperts = null;
+  ai.passConsec = 0;
+  ai.kpi.mlConf = '—';
+  if(full){
+    logRows.length=0;
+    $('tbody').innerHTML='';
+    histAll.length=0; histSig.length=0; histBetWR.length=0;
+    bank=baseBank; hwm=baseBank; stake=unit; lossStreak=0; winStreak=0; wCount=0; lCount=0;
+    warmActive=true; $('warmPanel').style.display='block'; warmUpdateUI();
+  }
+  computeNextRecommendation(); updateAnalytics(); refreshKPI();
+}
+
+/* ---- Global API ---- */
+window.SicBoAI = {
+  init(opts={}){
+    if(typeof opts.bankroll==='number') { baseBank=opts.bankroll; bank=baseBank; hwm=baseBank; $('bankIn').value=baseBank; }
+    if(typeof opts.k==='number'){ ai.kOrder=opts.k; $('aiKOrder').value=ai.kOrder; $('aiKDisp').textContent=ai.kOrder; }
+    if(typeof opts.zThr==='number'){ Z_THR=opts.zThr; $('aiZThr').value=Z_THR; $('aiZThrVal').textContent=Z_THR.toFixed(2); }
+    if(opts.strategy){ strategyMode=opts.strategy; $('strategyMode').value=strategyMode; $('aiMM').value=strategyMode; }
+    if(opts.persist===false){ ai.persist=false; $('aiPersist').checked=false; }
+    computeNextRecommendation(); refreshKPI(); updateAnalytics();
+    return true;
+  },
+  onResult(tag){ // 'S'|'B'|'T'
+    onOutcome(tag);
+    return true;
+  },
+  suggestBet(){
+    computeNextRecommendation();
+    const reason = recSource;
+    const conf = Math.round(lastConfShown*100);
+    const s = (recSide==='NONE'||recSide==='PASS')?0:stake;
+    return {side:recSide, stake:s, reason, conf};
+  },
+  setBankroll(x){ baseBank=+x; bank=baseBank; hwm=baseBank; unit=autoUnitFromBank(baseBank); stake=unit; refreshKPI(); return true; },
+  setStrategy(v){ strategyMode=v; $('strategyMode').value=v; $('aiMM').value=v; return true; },
+  exportCSV(){ return exportCSV(); },
+  reset(){ replay(); return true; }
+};
+
+/* Başlangıç */
+$('warmPanel').style.display = 'block';
+$('haltPill').style.display='none';
+warmUpdateUI();
+setRecoBadge('NONE');
+$('kStake').textContent='—';
+$('kUnit').textContent=String(unit);
+$('kBank').textContent=money(baseBank);
+
+// Load persisted if any
+loadState();
+computeNextRecommendation();
+refreshKPI();
+updateAnalytics();
+/* =================== /AI-INJECT:scripts =================== */
+})();
+</script></body>
 </html>
