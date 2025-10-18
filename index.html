@@ -113,9 +113,60 @@
       <div class="notice">
         <div class="icon">💡</div>
         <div>
-          <b>Kullanım:</b> Son 10 eli girerek kalibrasyonu tamamla. Her el <b>Small</b>, <b>Big</b> ya da <b>Tie</b> tuşla;
-          sistem <b>“Dur / Küçüğe Oyna / Büyüğe Oyna”</b> ve <b>stake</b> tutarını otomatik verir.
-        </div>
+          <!-- 📘 NASIL OYNANIR (EN ÜSTE EKLE) -->
+<details id="howto" open style="border:1px solid #2a3b66;border-radius:14px;padding:12px 14px;background:linear-gradient(180deg,#121d38,#0d1730);margin:10px 0 18px">
+  <summary style="cursor:pointer;font-weight:900;letter-spacing:.2px;display:flex;align-items:center;gap:8px;list-style:none">
+    📘 Nasıl Oynanır (Adım Adım)
+  </summary>
+
+  <div style="display:grid;gap:10px;margin-top:8px">
+    <ol style="margin:0 0 0 18px;padding:0">
+      <li><b>Giriş:</b> “Fero Sic Bo’ya Gir” butonuna tıkla. Şifre istendiğinde doğru şifreyi girerek içeri geç.</li>
+      <li><b>Warm-up (Kalibrasyon):</b> İlk ekranda <b>son 10 elin gerçek sonuçlarını</b> sırayla gir. Bu adım,
+        motorun kısa dönem dengesini yakalaması için zorunludur. Tamamlanmadan öneri açılmaz.</li>
+      <li><b>El Kaydı:</b> Her el bittiğinde çıkan sonuca göre <b>Small</b>, <b>Big</b> ya da <b>Tie</b> butonuna bas.
+        Sistem bu verilerden öğrenir ve bir sonraki el için <b>“Dur / Küçüğe Oyna / Büyüğe Oyna”</b> önerisi ile
+        <b>stake</b> miktarını otomatik hesaplar.</li>
+      <li><b>Öneri Mantığı (Özet):</b>
+        <ul style="margin:6px 0 0 16px">
+          <li><b>2xRule:</b> Son iki aynı yön gelmişse aynı yöne öncelik verir.</li>
+          <li><b>Flip-Flop Hold:</b> Küçük-Büyük dönüşümlü dalgalanma tespitinde geçici olarak <b>bekler</b>.</li>
+          <li><b>Trend vs Mean:</b> Mini trend ile ortalamaya dönüş adayı birlikteyse, <b>Thompson Sampling</b> ile seçim yapılır.</li>
+          <li><b>Histerezis Kilit:</b> Uzayan seri yönünde kilitler; karşı sinyal eşiği/durumunda çözülür.</li>
+        </ul>
+      </li>
+      <li><b>Stake (Bahis) Yönetimi:</b>
+        <ul style="margin:6px 0 0 16px">
+          <li><b>Auto-Unit (u):</b> Başlangıç bankının yaklaşık %0.6’sından türetilir; kısa vadeli kazanım oranına göre mikro ayar yapılır.</li>
+          <li><b>Kayıp Sonrası:</b> Drawdown’a göre hedefe yaklaşan kontrollü artış (<b>tek elde ≤ 2u</b> ve <b>≤ %35</b>; kilitte %25).</li>
+          <li><b>Kazanç Sonrası:</b> HWM (tepe) korunur, kârdayken stake nazikçe küçültülür ve döngü sonunda tekrar <b>u</b>’ya döner.</li>
+        </ul>
+      </li>
+      <li><b>KPI’ları Okuma:</b>
+        <ul style="margin:6px 0 0 16px">
+          <li><b>Öneri (Bu El):</b> O anki yön talimatı.</li>
+          <li><b>Bank / HWM:</b> Mevcut kasa ve ulaşılan tepe değer.</li>
+          <li><b>Stake (Sıradaki) & Dinamik Taban (u):</b> Bir sonraki el için miktar ve dinamik birim.</li>
+          <li><b>W/L, PnL, Kayıp Serisi:</b> Kazan/kaybet sayısı, toplam kâr/zarar ve ardışık kayıp uzunluğu.</li>
+          <li><b>WinRate(20) & Gölge PnL:</b> Son 20 bahisli el başarı yüzdesi ve “karşı yön olsaydı” varsayımsal sonuç.</li>
+        </ul>
+      </li>
+      <li><b>Geçmiş Tablosu:</b> Her turda <b>Kaynak</b> (PAIR/LOCK/TREND/MEAN/PAUSE), <b>Öneri</b>, <b>Gerçek</b>,
+        <b>Bahis</b>, <b>Sonuç</b>, <b>Net</b>, <b>Bank</b> bilgileri tutulur. Bu tabloyla strateji akışını izleyebilirsin.</li>
+      <li><b>Toplu İçe Aktarım (Opsiyonel):</b> El sonuçlarını tek satırda <b>small/big/tie</b> biçiminde yapıştırıp simüle edebilirsin.
+        Bu, algoritmayı hızla “ısındırmak” için idealdir.</li>
+      <li><b>Geri Al / Temizle:</b> Hatalı kayıt durumunda <b>Geri Al</b>, gerektiğinde <b>Tüm Kayıtları Sil</b> ile sıfırdan başla.</li>
+      <li><b>Ayarlar:</b> Sadece <b>Başlangıç Bank</b> girmen yeterli; <b>u</b> otomatik seçilir. Risk yönetimi ve yön önerisi tamamen otomatiktir.</li>
+      <li><b>Pratik İpuçları:</b>
+        <ul style="margin:6px 0 0 16px">
+          <li>Warm-up’ı atlama; kısa dönem dengesi doğru kurulmadığında öneri kalitesi düşer.</li>
+          <li>Uzun seri/kilit anlarında acele stake artırma; guardrail sınırları zaten artışı kademeli tutar.</li>
+          <li>Gölge PnL’i izleyerek strateji tercihlerinin alternatifine göre farkını ölç.</li>
+        </ul>
+      </li>
+    </ol>
+  </div>
+</details>
       </div>
 
       <!-- Detaylı Bilgi — (kısaltılmadı) -->
