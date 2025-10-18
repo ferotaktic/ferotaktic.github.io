@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
-<title>Tanrının Eli • Fero — Sic Bo (Small/Big) • Seri-Kilit (Histerezis) + Z-Skor + Bandit • Kelly-Lite • Dinamik Geri Kazanım</title>
+<title>Tanrının Eli • Fero — Sic Bo (Small/Big) • Öğrenen Çekirdek v2 (Flip-Flop Hold, 2xRule, Bandit-Decay, Auto-Unit)</title>
 <style>
 :root{
   --bg:#071022; --card:#0c1830; --muted:#9fb0d9; --text:#e6f0ff;
@@ -75,9 +75,9 @@ table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 th,td{padding:10px;border-bottom:1px solid rgba(255,255,255,.06);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 th{position:sticky;top:0;background:rgba(7,16,34,.96);color:var(--muted)}
 
-/* Ayarlar – en altta, kompakt */
+/* Ayarlar */
 .settings.card{padding:12px}
-.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.form{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}
 .group{display:flex;flex-direction:column;gap:6px}
 .label{color:var(--muted);font-size:11px}
 .input{
@@ -92,12 +92,16 @@ th{position:sticky;top:0;background:rgba(7,16,34,.96);color:var(--muted)}
 .warm .title{font-weight:900;color:#a7b8e8;margin-bottom:6px}
 .warm .p{font-size:12px;color:#9fb0d9}
 
+/* Toplu import */
+.import{margin-top:10px;padding:10px;border:1px dashed rgba(124,92,255,.25);border-radius:10px;background:rgba(124,92,255,.06)}
+.import textarea{width:100%;min-height:120px;background:#0a1327;color:#e6f0ff;border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:8px;font-family:ui-monospace,Consolas,monospace;font-size:12px}
+
 /* Erişilebilir canlı metin (gizli) */
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 </style>
 </head>
 <body>
-<div class="header">🎲 Tanrının Eli • <b>Fero</b> — Sic Bo (Small/Big) • Seri-Kilit (Histerezis) • Z-Skor • Bandit • Kelly-Lite • Dinamik Geri Kazanım</div>
+<div class="header">🎲 Tanrının Eli • <b>Fero</b> — Sic Bo (Small/Big) • Öğrenen Çekirdek v2 — Flip-Flop Hold • 2xRule • Bandit-Decay • Auto-Unit</div>
 
 <div class="container">
 
@@ -106,7 +110,7 @@ th{position:sticky;top:0;background:rgba(7,16,34,.96);color:var(--muted)}
     <div class="h4">Öneri</div>
     <div class="reco">
       <div id="recoBadge" class="reco-badge reco-wait">Dur</div>
-      <div class="reco-pill">Sıradaki Bahis: <span id="recoStake">30</span> TL</div>
+      <div class="reco-pill">Sıradaki Bahis: <span id="recoStake">—</span> TL</div>
       <div class="sub">Her el <b>Small</b>, <b>Big</b> ya da <b>Tie</b> tuşla. Sistem “Dur / Küçüğe Oyna / Büyüğe Oyna” ve tutarı otomatik verir.</div>
     </div>
 
@@ -139,8 +143,8 @@ th{position:sticky;top:0;background:rgba(7,16,34,.96);color:var(--muted)}
     <div class="kpi-grid">
       <div class="kpi"><div class="t">Öneri (Bu El)</div><div class="v" id="kRecoText">Dur</div></div>
       <div class="kpi"><div class="t">Bank</div><div class="v" id="kBank">5000.00</div></div>
-      <div class="kpi"><div class="t">Stake (Sıradaki)</div><div class="v" id="kStake">30</div></div>
-      <div class="kpi"><div class="t">Dinamik Taban (u)</div><div class="v" id="kUnit">30</div></div>
+      <div class="kpi"><div class="t">Stake (Sıradaki)</div><div class="v" id="kStake">—</div></div>
+      <div class="kpi"><div class="t">Dinamik Taban (u)</div><div class="v" id="kUnit">—</div></div>
       <div class="kpi"><div class="t">HWM (Tepe)</div><div class="v" id="kHWM">5000.00</div></div>
       <div class="kpi"><div class="t">Bahisli Eller (W/L)</div><div class="v" id="kWL">0 / 0</div></div>
       <div class="kpi"><div class="t">PNL (Seans)</div><div class="v" id="kPNL">+0.00</div></div>
@@ -160,9 +164,25 @@ th{position:sticky;top:0;background:rgba(7,16,34,.96);color:var(--muted)}
         <tbody id="tbody"></tbody>
       </table>
     </div>
+
+    <!-- Toplu import (opsiyonel) -->
+    <div class="import" id="importBox">
+      <div class="h4">Toplu Geçmiş Yapıştır (Opsiyonel)</div>
+      <div class="sub">Buraya tek tek satırlı <b>small/big/tie</b> veya eski tablo satırlarını yapıştır. Sistem “Gerçek” akışını ayıklayıp simüle eder.</div>
+      <textarea id="pasteArea" placeholder="small
+big
+big
+tie
+..."></textarea>
+      <div class="row">
+        <button id="btnImport" class="btn">İçe Aktar ve Simüle Et</button>
+        <button id="btnImportClear" class="btn ghost">Alanı Temizle</button>
+      </div>
+    </div>
+
   </div>
 
-  <!-- AYARLAR (en altta) -->
+  <!-- AYARLAR (sade) -->
   <div class="card settings">
     <div class="h4">Ayarlar</div>
     <div class="form">
@@ -171,15 +191,11 @@ th{position:sticky;top:0;background:rgba(7,16,34,.96);color:var(--muted)}
         <input id="bankIn" class="input" type="number" value="5000" step="1" min="0"/>
       </div>
       <div class="group">
-        <label class="label" for="unitIn">Başlangıç Bahis (u)</label>
-        <input id="unitIn" class="input" type="number" value="30" step="1" min="1"/>
-      </div>
-      <div class="group">
         <div class="small-actions">
           <button id="apply" class="btn">Uygula</button>
           <button id="reset" class="btn ghost">Varsayılana Dön</button>
         </div>
-        <div class="note">Sadece “Bank” ve “Başlangıç Bahis”i ayarlarsın; yön seçimi ve risk yönetimi otomatik.</div>
+        <div class="note">Sadece “Bank” girersin; <b>başlangıç bahis (u)</b> otomatik seçilir (~%0.6). Yön ve risk yönetimi tamamen otomatik.</div>
       </div>
     </div>
   </div>
@@ -190,62 +206,86 @@ th{position:sticky;top:0;background:rgba(7,16,34,.96);color:var(--muted)}
 
 <script>
 (()=> {
-/* ================== Sabitler ================== */
-const MIN_WARMUP = 10;          // başta son 10 el gir
-const W_WINRATE = 20;           // win-rate penceresi
-const W_SIGNAL  = 12;           // sinyal penceresi
-const Z_THR     = 1.10;         // Z-skor eşiği (adaptif mean-revert)
-const STREAK_TREND = 2;         // trend için min seri
-const SERIES_LOCK  = 4;         // uzun seri için kilit açma eşiği
-const HYST_OPP     = 2;         // kilidi bozmak için ardışık karşı sinyal
-const HYST_LOSS    = 2;         // *** KİLİTTE 2 NET KAYIP → KİLİTİ ÇÖZ ***
+/* =============== Parametreler =============== */
+const MIN_WARMUP = 10;       // başta son 10 el gir
+const W_WINRATE  = 20;       // win-rate penceresi
+const W_SIGNAL   = 12;       // sinyal penceresi
+let   Z_THR      = 1.10;     // Z-skor eşiği (adaptif, decay ile oynar)
+const STREAK_TREND = 2;      // *** 2xRule: iki aynı → o tarafa oyna (öncelik)
+let   SERIES_LOCK  = 4;      // dinamik kilit eşiği (öğrenimle ayarlanır)
+const HYST_OPP     = 2;      // kilidi bozmak için ardışık karşı sinyal
+const HYST_LOSS    = 2;      // kilitte 2 net kayıp → kilidi çöz
+const FF_HOLD_UNTIL_PAIR = true; // flip-flopta iki aynı görülene kadar dur
+const DECAY = 0.995;         // bandit & eşiklerde hafıza çürümesi
 
-const ENTRY_COOLDOWN = 1;       // flip-flop sonrası bekleme (1 el)
-
-// Yumuşak stake artışı (ani sıçrama olmasın)
+/* Stake kontrol */
 const MAX_STEP_U          = 2;     // tek el max +2u
 const MAX_STEP_MULT       = 1.35;  // tek el max +%35
-const MAX_STEP_MULT_LOCK  = 1.25;  // *** kilitte tek el max +%25 ***
-const CYCLE_TP_U          = 3;     // HWM üzerinde mini TP (+3u)
-const ADAPT_SERIES_LEN    = 6;     // seri uzadığında baskıyı azalt
+const MAX_STEP_MULT_LOCK  = 1.25;  // kilitte tek el max +%25
+const CYCLE_TP_U          = 3;     // HWM üstü küçük TP (+3u)
+const ADAPT_SERIES_LEN    = 6;     // uzun seri → baskı azalt
 
-/* ================== Durum ================== */
+/* =============== Durum =============== */
 let baseBank = 5000, unit = 30;
 let bank = baseBank, hwm = baseBank;
 let stake = unit, maxStake = unit;
 let lossStreak = 0;
 let nHands = 0, wCount=0, lCount=0;
 
-let recSide = 'NONE';           // 'S' | 'B' | 'NONE'
-let recSource = 'NONE';         // 'TREND' | 'MEAN' | 'LOCK' | 'FALLBACK' | 'NONE'
-let cooldown = 0;
+let recSide = 'NONE';   // 'S'|'B'|'NONE'
+let recSource = 'NONE'; // 'PAIR'|'LOCK'|'TREND'|'MEAN'|'FALLBACK'|'PAUSE'|'NONE'
 let warmActive = true;
+
 const warmSeq = [];
-const histAll = [];             // gerçek sonuçlar: 'S'|'B'|'T'
-const histSig = [];             // sinyal akışı: 'S'|'B'  (TIE=nötr)
-const histBetWR = [];           // 1/0 yalnız bahisli eller
+const histAll = [];     // gerçek sonuç: 'S'|'B'|'T'
+const histSig = [];     // sinyal akışı: 'S'|'B' (T nötr: son yön)
+const histBetWR = [];   // bahisli 1/0
 
-// Seri kilidi (histerezis)
-let lockedSide = null;          // 'S' | 'B' | null
-let oppSinceLockSig = 0;        // kilitliyken karşı sinyal sayacı
-let lockLossCount   = 0;        // kilitliyken net kayıp sayacı
+/* Histerezis */
+let lockedSide = null;  // 'S'|'B'|null
+let oppSinceLockSig = 0;
+let lockLossCount   = 0;
 
-// Bandit Beta (TREND vs MEAN)
-const beta = { TREND:{a:1,b:1}, MEAN:{a:1,b:1} };
-let shadowPNL = 0;              // what-if toplam
+/* Flip-flop tutucu */
+let ffHold = false;
 
-/* ================== Yardımcılar ================== */
+/* Bandit (TREND vs MEAN) + decay */
+const beta = {
+  TREND:{a:1,b:1},
+  MEAN :{a:1,b:1}
+};
+function decayBandit(){
+  beta.TREND.a*=DECAY; beta.TREND.b*=DECAY;
+  beta.MEAN.a *=DECAY; beta.MEAN.b *=DECAY;
+  // Z_THR küçük adımlarla ortalamaya çekilsin (1.10 ± 0.15 bandı)
+  const target=1.10;
+  Z_THR = Math.max(0.95, Math.min(1.25, Z_THR*DECAY + target*(1-DECAY)));
+}
+/* Yardımcılar */
 const $ = id => document.getElementById(id);
-function money(x){return (Number.isFinite(x)?x:0).toFixed(2);}
-function setRecoBadge(side){
+const money = x => (Number.isFinite(x)?x:0).toFixed(2);
+function setRecoBadge(side, tag=''){
   const el = $('recoBadge'); const t = $('kRecoText');
   el.className = 'reco-badge ';
-  if(side==='S'){ el.classList.add('reco-small'); el.textContent='Küçüğe Oyna'; t.textContent='Küçüğe Oyna'; }
-  else if(side==='B'){ el.classList.add('reco-big'); el.textContent='Büyüğe Oyna'; t.textContent='Büyüğe Oyna'; }
-  else{ el.classList.add('reco-wait'); el.textContent='Dur'; t.textContent='Dur'; }
+  if(side==='S'){ el.classList.add('reco-small'); el.textContent='Küçüğe Oyna'+(tag?` (${tag})`:``); t.textContent='Küçüğe Oyna'; }
+  else if(side==='B'){ el.classList.add('reco-big'); el.textContent='Büyüğe Oyna'+(tag?` (${tag})`:``); t.textContent='Büyüğe Oyna'; }
+  else{ el.classList.add('reco-wait'); el.textContent='Dur'+(tag?` (${tag})`:``); t.textContent='Dur'; }
 }
-function rollingWR(){ if(histBetWR.length===0) return null; return histBetWR.reduce((a,b)=>a+b,0) / histBetWR.length; }
+function rollingWR(){ if(histBetWR.length===0) return null; return histBetWR.reduce((a,b)=>a+b,0)/histBetWR.length; }
+function autoUnitFromBank(b){
+  // ~%0.6 bank; 3-9 bin arası 30-54 gibi değerler verir. alt sınır 10 TL
+  const basePct = 0.006;
+  let u = Math.max(10, Math.round(b*basePct));
+  // WR iyiyse u artışını hafif genişlet (öğrenen)
+  const wr = rollingWR();
+  if(wr!==null){
+    if(wr>=0.58) u = Math.round(u*1.15);
+    else if(wr<=0.46) u = Math.max(10, Math.round(u*0.9));
+  }
+  return u;
+}
 function dynamicUnit(){
+  // u; kısa vadeli WR ile mikro ayarlı (görsel KPI için)
   const wr = rollingWR(); let f = 1.0;
   if(wr!==null){
     if(wr >= 0.58) f = 1.10;
@@ -256,22 +296,26 @@ function dynamicUnit(){
   return Math.max(1, Math.round(unit*f));
 }
 function lastStreak(side){ let c=0; for(let i=histSig.length-1;i>=0;i--){ if(histSig[i]===side) c++; else break; } return c; }
-function flipFlopDetected(){
+function flipFlop4(){
   const a = histSig.slice(-4);
   return a.length===4 && (a[0]!==a[1] && a[0]===a[2] && a[1]===a[3]);
 }
-function zScoreForWindow(){
-  const w = histSig.slice(-W_SIGNAL), n = w.length;
-  if(n===0) return 0;
-  const sCnt = w.filter(x=>x==='S').length;
-  const mean = n*0.5, sd = Math.sqrt(n*0.25);
-  if(sd===0) return 0;
-  return (sCnt - mean)/sd; // + ise Small baskın; - ise Big baskın
+function pairSeen(){ const a=histSig.slice(-2); return a.length===2 && a[0]===a[1]; }
+function zScore(){
+  const w = histSig.slice(-W_SIGNAL), n = w.length; if(n===0) return 0;
+  const sCnt = w.filter(x=>x==='S').length; const mean = n*0.5; const sd = Math.sqrt(n*0.25); if(sd===0) return 0;
+  return (sCnt-mean)/sd; // + Small aşırı, - Big aşırı
 }
 
-/* ================== Öneri çekirdeği ================== */
+/* =============== Öneri çekirdeği =============== */
 function recommendCore(){
-  // 1) SERİ KİLİDİ (Histerezis)
+  // Flip-flop hold: küçük-büyük-küçük-büyük görüldüyse dur ve iki aynı görülene kadar bekle
+  if(flipFlop4()){ ffHold = true; }
+  if(ffHold){
+    if(pairSeen()){ ffHold = false; } else { return {side:'NONE', source:'PAUSE', tag:'Flip-Flop'}; }
+  }
+
+  // 0) SERİ KİLİDİ (histerezis)
   const sLen = lastStreak('S'), bLen = lastStreak('B');
   const lastSide = (sLen>0 && sLen>=bLen) ? 'S' : (bLen>0 ? 'B' : null);
 
@@ -280,39 +324,46 @@ function recommendCore(){
     else if(bLen >= SERIES_LOCK){ lockedSide='B'; oppSinceLockSig=0; lockLossCount=0; }
   }else{
     if(lastSide===lockedSide){ oppSinceLockSig=0; return {side:lockedSide, source:'LOCK'}; }
-    else if(lastSide!==null){ // karşı yönde akıyor
+    else if(lastSide!==null){
       oppSinceLockSig++;
       if(oppSinceLockSig < HYST_OPP) return {side:lockedSide, source:'LOCK'};
-      // eşik doldu → kilit bırakılır (kayıp bazlı çözüm ayrıca outcome içinde)
-      lockedSide = null; oppSinceLockSig=0; lockLossCount=0;
+      // eşiğe ulaştı → kilidi bırak
+      lockedSide=null; oppSinceLockSig=0; lockLossCount=0;
     }
   }
   if(lockedSide!==null) return {side:lockedSide, source:'LOCK'};
 
-  // 2) Z-SKOR (adaptif mean-revert adayı)
-  const z = zScoreForWindow();
-  let meanCand = null;
-  if(z >= Z_THR) meanCand = {side:'B', source:'MEAN'}; // Small aşırı → Big'e dön
-  else if(z <= -Z_THR) meanCand = {side:'S', source:'MEAN'}; // Big aşırı → Small'a dön
+  // 1) *** 2xRule (Öncelik): son iki aynıysa o tarafa ***
+  if(sLen>=STREAK_TREND) return {side:'S', source:'PAIR'};
+  if(bLen>=STREAK_TREND) return {side:'B', source:'PAIR'};
 
-  // 3) TREND adayı
-  let trendCand = null;
-  if(sLen >= STREAK_TREND) trendCand = {side:'S', source:'TREND'};
-  else if(bLen >= STREAK_TREND) trendCand = {side:'B', source:'TREND'};
+  // 2) Z-Skor (Mean-Revert adayı)
+  const z = zScore();
+  let meanCand=null;
+  if(z >= Z_THR) meanCand = {side:'B', source:'MEAN'};      // Small aşırı → Big
+  else if(z <= -Z_THR) meanCand = {side:'S', source:'MEAN'}; // Big aşırı → Small
 
-  // 3-bis) Mini bandit (TREND vs MEAN)
+  // 3) Mini Trend adayı
+  let trendCand=null;
+  if(sLen >= 1) trendCand = {side:'S', source:'TREND'};
+  if(bLen >= 1) trendCand = {side:'B', source:'TREND'};
+
+  // 4) Bandit (TREND vs MEAN) — ikisi de mevcutsa Thompson Sampling
   if(trendCand && meanCand){
-    const mTrend = beta.TREND.a/(beta.TREND.a+beta.TREND.b);
-    const mMean  = beta.MEAN.a /(beta.MEAN.a +beta.MEAN.b);
-    const jitterT = mTrend + (Math.random()*0.02-0.01);
-    const jitterM = mMean  + (Math.random()*0.02-0.01);
-    return (jitterT>=jitterM) ? trendCand : meanCand;
+    const drawBeta = (a,b)=> {
+      const mean = a/(a+b);
+      const jitter = (Math.random()*0.08-0.04); // ±0.04
+      return Math.max(0, Math.min(1, mean + jitter));
+    };
+    const sT = drawBeta(beta.TREND.a, beta.TREND.b);
+    const sM = drawBeta(beta.MEAN.a,  beta.MEAN.b);
+    return (sT>=sM) ? trendCand : meanCand;
   }
   if(trendCand) return trendCand;
   if(meanCand)  return meanCand;
 
-  // Belirsiz: sonsuz beklemeyi önlemek için son akışa katıl
-  if(histSig.length>=2){
+  // 5) Belirsiz → son akışa katıl
+  if(histSig.length>=1){
     return {side:(histSig[histSig.length-1]==='S'?'S':'B'), source:'FALLBACK'};
   }
   return {side:'NONE', source:'NONE'};
@@ -320,16 +371,12 @@ function recommendCore(){
 
 function computeNextRecommendation(){
   if(warmActive){ recSide='NONE'; recSource='NONE'; return; }
-
-  if(flipFlopDetected()) cooldown = ENTRY_COOLDOWN;
-  if(cooldown>0){ cooldown--; recSide='NONE'; recSource='NONE'; return; }
-
   const rec = recommendCore();
   recSide   = rec.side;
   recSource = rec.source;
 }
 
-/* ================== Stake ilerleme ================== */
+/* =============== Stake ilerleme =============== */
 function boundedSoft(prev, inc){
   const u = dynamicUnit();
   const capU = prev + MAX_STEP_U*u;
@@ -344,56 +391,40 @@ function dynamicK(dd, u){
 }
 function kellyAdj(){
   const p = rollingWR();
-  if(p===null || p<=0.5) return 0;          // güven yok → ekleme yok
-  return Math.min(0.25, 2*p - 1);           // 0 .. +0.25 arası yumuşak
+  if(p===null || p<=0.5) return 0;
+  return Math.min(0.25, 2*p - 1); // 0..0.25
 }
 function nextAfterLoss(prev){
   const u = dynamicUnit();
   const dd = currentDD();
   const K  = dynamicK(dd, u);
-  const target = Math.max(u, Math.ceil(dd / Math.max(1,K))); // hedef: DD/K
+  const target = Math.max(u, Math.ceil(dd / Math.max(1,K)));
   const incNeed = Math.max(0, target - prev);
-
-  // kayıp serisine göre temel artış (yumuşak)
   const baseK = [1.00,1.15,1.25,1.35][Math.min(3, lossStreak)];
-
-  // son akış yönü
   const last = histSig[histSig.length-1] || 'S';
   const seriesLen = lastStreak(last);
-
-  // uzun seri → baskıyı azalt
   const seriesMult = (seriesLen >= ADAPT_SERIES_LEN) ? 0.6 : 1.0;
-
   let inc = Math.max(Math.ceil(baseK*u*seriesMult), incNeed, u);
   let ns  = boundedSoft(prev, inc);
-
-  // Kelly-lite olumluysa küçük çarpan
   const kAdj = kellyAdj();
   ns = Math.round(ns * (1 + kAdj));
-
-  // *** KİLİTTE ve akış kilidin TERSİNE gidiyorsa ekstra yumuşatma ***
   if(lockedSide){
     const lockedAgainst = (lockedSide!==last);
-    if(lockedAgainst){
-      ns = Math.round(ns * 0.85);
-      ns = Math.max(u, ns);
-    }
+    if(lockedAgainst){ ns = Math.max(u, Math.round(ns * 0.85)); }
   }
-
   return Math.max(u, ns);
 }
 function nextAfterWin(prev){
   const u = dynamicUnit();
-  // HWM altında → stake düşürme; üstünde → daha hızlı azalt
-  if(bank < hwm) return Math.max(u, Math.round(prev));   // azaltma yok
-  let ns = Math.max(u, prev - 2*u);                      // asimetrik hızlı düşüş
+  if(bank < hwm) return Math.max(u, Math.round(prev));
+  let ns = Math.max(u, prev - 2*u);
   return ns;
 }
 
-/* ================== UI güncelleme ================== */
+/* =============== UI =============== */
 function refreshKPI(){
   $('kBank').textContent = money(bank);
-  $('kStake').textContent = String(stake);
+  $('kStake').textContent = (recSide==='NONE')?'—':String(stake);
   $('kUnit').textContent  = String(dynamicUnit());
   $('kHWM').textContent   = money(hwm);
   $('kWL').textContent    = `${wCount} / ${lCount}`;
@@ -401,8 +432,9 @@ function refreshKPI(){
   $('kLStreak').textContent = String(lossStreak);
   const wr = rollingWR(); $('kWR').textContent = wr===null?'—':(Math.round(wr*100)+'%');
   $('kShadow').textContent = (shadowPNL>=0?'+':'-')+money(Math.abs(shadowPNL));
-  setRecoBadge(recSide);
-  $('recoStake').textContent = String(stake);
+  const tag = (recSource==='PAUSE'?'Flip-Flop': (recSource==='PAIR'?'2xRule': (recSource==='LOCK'?'Kilit':recSource)));
+  setRecoBadge(recSide, (recSide==='NONE'||!tag)?'':tag);
+  $('recoStake').textContent = (recSide==='NONE')?'—':String(stake);
 }
 function addRow(src, recUsed, actual, usedStake, outcomeStr, pnl, shadowThis){
   nHands++;
@@ -425,7 +457,10 @@ function addRow(src, recUsed, actual, usedStake, outcomeStr, pnl, shadowThis){
   $('live').textContent = `El ${nHands}: ${actTxt} geldi, ${outcomeStr}.`;
 }
 
-/* ================== Warm-up ================== */
+/* What-if toplam */
+let shadowPNL = 0;
+
+/* =============== Warm-up =============== */
 function warmUpdateUI(){ $('wStat').textContent = `${warmSeq.length}/${MIN_WARMUP}`; }
 function warmAdd(tag){
   if(!warmActive) return;
@@ -434,16 +469,13 @@ function warmAdd(tag){
   if(warmSeq.length===MIN_WARMUP){
     for(const t of warmSeq){
       histAll.push(t);
-      if(t==='T'){
-        const last = histSig[histSig.length-1];
-        if(last) histSig.push(last); // TIE = tarafsız (Big'e yazma)
-      } else {
-        histSig.push(t);
-      }
+      if(t==='T'){ const last = histSig[histSig.length-1]; if(last) histSig.push(last); }
+      else { histSig.push(t); }
     }
-    warmSeq.length = 0;
-    warmActive = false;
-    $('warmPanel').style.display = 'none';
+    warmSeq.length = 0; warmActive = false; $('warmPanel').style.display = 'none';
+    // warm-up sonrası auto-unit ve stake başlangıcı
+    unit  = autoUnitFromBank(baseBank);
+    stake = unit;
     computeNextRecommendation();
     refreshKPI();
   }
@@ -451,59 +483,50 @@ function warmAdd(tag){
 function warmUndo(){ if(warmActive && warmSeq.length>0){ warmSeq.pop(); warmUpdateUI(); } }
 function warmClear(){ if(warmActive){ warmSeq.length=0; warmUpdateUI(); } }
 
-/* ================== Sonuç işlence ================== */
-function onOutcome(tag){ // 'S' | 'B' | 'T'
+/* =============== Sonuç işlence =============== */
+function onOutcome(tag){ // 'S'|'B'|'T'
   if(warmActive){ warmAdd(tag); return; }
+
+  // decay uygula (öğrenmenin “güncelliğini” koru)
+  decayBandit();
 
   const recUsed = recSide;
   const srcUsed = recSource;
   const usedStake = (recUsed==='NONE') ? 0 : stake;
 
-  // Kaydı ekle (sinyal akışına TIE nötr)
   histAll.push(tag);
-  if(tag==='T'){
-    const last = histSig[histSig.length-1];
-    if(last) histSig.push(last); // nötr: son yönü tekrar et
-  }else{
-    histSig.push(tag);
-  }
-  if(histSig.length>4000) histSig.shift();
+  if(tag==='T'){ const last = histSig[histSig.length-1]; if(last) histSig.push(last); }
+  else { histSig.push(tag); }
+  if(histSig.length>6000) histSig.shift();
 
   let pnl=0, out='Bekle', shadowThis=0;
 
   if(recUsed!=='NONE'){
-    const isWin = (tag!=='T' && recUsed===tag); // TIE daima kayıp
+    const isWin = (tag!=='T' && recUsed===tag);
     if(isWin){
       pnl = +usedStake; bank += pnl; out='KAZAN'; wCount++; lossStreak=0;
-      // bandit güncelle
-      if(srcUsed==='TREND') beta.TREND.a++; else if(srcUsed==='MEAN') beta.MEAN.a++;
-      // stake
+      if(srcUsed==='TREND') beta.TREND.a+=1; else if(srcUsed==='MEAN') beta.MEAN.a+=1;
+      // kilit güven puanı
+      if(srcUsed==='LOCK'){ SERIES_LOCK = Math.max(3, Math.round(SERIES_LOCK*0.98)); }
       stake = nextAfterWin(stake);
       histBetWR.push(1); if(histBetWR.length>W_WINRATE) histBetWR.shift();
-      // kilit sayaçları
       if(lockedSide){ lockLossCount = 0; }
     }else{
       pnl = -usedStake; bank += pnl; out='KAYIP'; lCount++; lossStreak++;
-      // bandit güncelle
-      if(srcUsed==='TREND') beta.TREND.b++; else if(srcUsed==='MEAN') beta.MEAN.b++;
-      // *** kilitte kayıp sayacı ***
+      if(srcUsed==='TREND') beta.TREND.b+=1; else if(srcUsed==='MEAN') beta.MEAN.b+=1;
       if(lockedSide && recUsed===lockedSide){
         lockLossCount++;
-        // z-skor karşıya taşmışsa veya 2 net kayıp olduysa kilidi çöz
-        const z = zScoreForWindow();
+        const z = zScore();
         const zOpp = (lockedSide==='S' && z<=-Z_THR) || (lockedSide==='B' && z>=Z_THR);
-        if(zOpp || lockLossCount>=HYST_LOSS){
-          lockedSide=null; oppSinceLockSig=0; lockLossCount=0;
-        }
+        if(zOpp || lockLossCount>=HYST_LOSS){ lockedSide=null; oppSinceLockSig=0; lockLossCount=0; }
+        // kilit kötü gidiyorsa eşiği ağırlaştıralım
+        if(!lockedSide){ SERIES_LOCK = Math.min(6, Math.round(SERIES_LOCK*1.05)); }
       }
-      // stake
       stake = nextAfterLoss(stake);
       histBetWR.push(0); if(histBetWR.length>W_WINRATE) histBetWR.shift();
-      // *** kilitte kayıpta MEAN'e küçük kredi (adaptasyon hızlansın) ***
-      if(lockedSide) beta.MEAN.a += 0.25;
     }
 
-    // What-if (karşı yön) — TIE her iki taraf için de kayıp sayılır
+    // What-if (karşı yön)
     const altSide = (recUsed==='S') ? 'B' : 'S';
     const altWin  = (tag!=='T' && altSide===tag);
     shadowThis = altWin ? +usedStake : -usedStake;
@@ -512,10 +535,8 @@ function onOutcome(tag){ // 'S' | 'B' | 'T'
 
   const prevHWM = hwm;
   if(bank>hwm) hwm = bank;
-  if(hwm>prevHWM){ stake = dynamicUnit(); }                         // yeni tepe → base
-  if(bank>=hwm && (bank-baseBank) >= CYCLE_TP_U*dynamicUnit()){     // küçük TP
-    stake = dynamicUnit();
-  }
+  if(hwm>prevHWM){ stake = dynamicUnit(); }
+  if(bank>=hwm && (bank-baseBank) >= CYCLE_TP_U*dynamicUnit()){ stake = dynamicUnit(); }
   maxStake = Math.max(maxStake, stake);
 
   addRow(srcUsed, recUsed, tag, usedStake, out, pnl, shadowThis);
@@ -524,49 +545,104 @@ function onOutcome(tag){ // 'S' | 'B' | 'T'
   refreshKPI();
 }
 
-/* ================== Undo / Clear / Apply ================== */
+/* =============== Undo / Clear / Apply =============== */
 function replay(){
-  bank = baseBank; hwm = baseBank; stake = unit; maxStake=unit;
+  bank = baseBank; hwm = baseBank;
+  unit = autoUnitFromBank(baseBank); stake = unit; maxStake=unit;
   lossStreak=0; nHands=0; wCount=0; lCount=0;
   histAll.length=0; histSig.length=0; histBetWR.length=0;
-  lockedSide=null; oppSinceLockSig=0; lockLossCount=0; cooldown=0;
+  lockedSide=null; oppSinceLockSig=0; lockLossCount=0; ffHold=false;
   recSide='NONE'; recSource='NONE'; shadowPNL=0;
-  beta.TREND={a:1,b:1}; beta.MEAN={a:1,b:1};
+  beta.TREND={a:1,b:1}; beta.MEAN={a:1,b:1}; Z_THR = 1.10; SERIES_LOCK = 4;
   $('tbody').innerHTML='';
   warmActive = true; warmSeq.length=0; $('warmPanel').style.display = 'block'; warmUpdateUI();
+  refreshKPI();
 }
 function undo(){
   if(warmActive){ warmUndo(); return; }
   if(!histAll.length) return;
   const copy = histAll.slice(0,-1);
-  // reset ve tam yeniden yürütme
-  bank = baseBank; hwm = baseBank; stake = unit; maxStake=unit;
+  // reset ve yeniden yürüt
+  bank = baseBank; hwm = baseBank;
+  unit = autoUnitFromBank(baseBank); stake=unit; maxStake=unit;
   lossStreak=0; nHands=0; wCount=0; lCount=0;
   histAll.length=0; histSig.length=0; histBetWR.length=0;
-  lockedSide=null; oppSinceLockSig=0; lockLossCount=0; cooldown=0;
+  lockedSide=null; oppSinceLockSig=0; lockLossCount=0; ffHold=false;
   recSide='NONE'; recSource='NONE'; shadowPNL=0;
-  beta.TREND={a:1,b:1}; beta.MEAN={a:1,b:1};
+  beta.TREND={a:1,b:1}; beta.MEAN={a:1,b:1}; Z_THR = 1.10; SERIES_LOCK = 4;
   $('tbody').innerHTML='';
   warmActive=false; $('warmPanel').style.display='none';
 
   for(const t of copy){ computeNextRecommendation(); onOutcome(t); }
-  computeNextRecommendation();
-  refreshKPI();
+  computeNextRecommendation(); refreshKPI();
 }
-function clearAll(){ if(confirm('Tüm kayıtları silmek istiyor musun?')){ replay(); refreshKPI(); } }
+function clearAll(){ if(confirm('Tüm kayıtları silmek istiyor musun?')){ replay(); } }
 function apply(){
   const b = parseFloat($('bankIn').value);
-  const u = parseFloat($('unitIn').value);
   if(!Number.isFinite(b)||b<0){alert('Geçerli bank gir.');return}
-  if(!Number.isFinite(u)||u<=0){alert('Geçerli başlangıç bahis gir.');return}
-  baseBank=b; unit=Math.round(u);
-  replay(); refreshKPI();
+  baseBank=b;
+  replay(); // unit otomatik hesaplanır
 }
 
-/* ================== Bağlantılar ================== */
-function guardTap(btn, pulseClass, cb){
+/* =============== Toplu import =============== */
+// Basit small/big/tie listelerini ve eski tablo formatını destekler
+function parseLinesToTags(text){
+  const tags = [];
+  const lines = text.split(/\r?\n/);
+
+  // 1) Basit satırlar: "small" | "big" | "tie" (veya s/b/t)
+  let simpleHits = 0;
+  for(const raw of lines){
+    const t = raw.trim().toLowerCase();
+    if(!t) continue;
+    if(/\bsmall\b|^s$/.test(t)){ tags.push('S'); simpleHits++; continue; }
+    if(/\bbig\b|^b$/.test(t)){ tags.push('B'); simpleHits++; continue; }
+    if(/\btie\b|^t$/.test(t)){ tags.push('T'); simpleHits++; continue; }
+  }
+  if(simpleHits>0) return tags;
+
+  // 2) Geriye dönük: "# FALLBACK Small Big 74 KAYIP" türü satırlar
+  for(const raw of lines){
+    const line = raw.trim();
+    if(!line) continue;
+    if(!/^\d+/.test(line)) continue;           // numarayla başlıyorsa al
+    const parts = line.split(/\s+/);
+    if(parts.length < 6) continue;
+    const actual = parts[3];
+    if(/small/i.test(actual)) tags.push('S');
+    else if(/big/i.test(actual)) tags.push('B');
+    else if(/tie/i.test(actual)) tags.push('T');
+  }
+  return tags;
+}
+
+// Veri-temelli başlangıç ayarı (trend'e hafif avantaj, erken kilit, mean-revert biraz geç)
+function seedLearningFromDataset(){
+  beta.TREND.a = 3; beta.TREND.b = 2;  // Trend'e ufak önyargı
+  beta.MEAN.a  = 2; beta.MEAN.b  = 3;  // Mean'i biraz geriden başlat
+  Z_THR = 1.18;                         // Tersine dönüşü biraz geciktir
+  SERIES_LOCK = 3;                      // Kilidi bir tık erken kur
+}
+
+function importAndSim(text){
+  const tags = parseLinesToTags(text);
+  if(tags.length===0){ alert('Uygun satır bulunamadı.'); return; }
+
+  // Veri tohumlama
+  seedLearningFromDataset();
+
+  // sıcak başlat: warm-up atla, otomatik u/stake
+  warmActive=false; $('warmPanel').style.display='none';
+  unit = autoUnitFromBank(baseBank); stake=unit;
+  computeNextRecommendation(); refreshKPI();
+  for(const t of tags){ onOutcome(t); }
+  computeNextRecommendation(); refreshKPI();
+}
+
+/* =============== Bağlantılar =============== */
+function guardTap(btn, pulse, cb){
   if(btn._lock) return; btn._lock=true;
-  btn.classList.remove(pulseClass); void btn.offsetWidth; btn.classList.add(pulseClass);
+  btn.classList.remove(pulse); void btn.offsetWidth; btn.classList.add(pulse);
   try{ cb(); } finally { setTimeout(()=>{ btn._lock=false; }, 220); }
 }
 $('btnSmall').addEventListener('click',()=>guardTap($('btnSmall'),'pulse-win', ()=>onOutcome('S')));
@@ -575,16 +651,20 @@ $('btnTie').addEventListener('click',  ()=>guardTap($('btnTie'),'pulse-tie',  ()
 $('btnUndo').addEventListener('click', ()=>undo());
 $('btnClear').addEventListener('click',()=>clearAll());
 $('apply').addEventListener('click',  ()=>apply());
-$('reset').addEventListener('click',  ()=>{ $('bankIn').value=5000; $('unitIn').value=30; apply(); });
+$('reset').addEventListener('click',  ()=>{ $('bankIn').value=5000; apply(); });
 
-/* Warm-up butonları */
+/* Warm-up */
 $('wSmall').addEventListener('click', ()=>guardTap($('wSmall'),'pulse-win', ()=>warmAdd('S')));
 $('wBig').addEventListener('click',   ()=>guardTap($('wBig'),'pulse-loss',()=>warmAdd('B')));
 $('wTie').addEventListener('click',   ()=>guardTap($('wTie'),'pulse-tie', ()=>warmAdd('T')));
 $('wUndo').addEventListener('click',  ()=>warmUndo());
 $('wClear').addEventListener('click', ()=>warmClear());
 
-/* Klavye: form alanlarında değilken */
+/* Import */
+$('btnImport').addEventListener('click', ()=>importAndSim($('pasteArea').value));
+$('btnImportClear').addEventListener('click', ()=>{$('pasteArea').value='';});
+
+/* Kısayollar */
 document.addEventListener('keydown',(e)=>{
   const t = e.target.tagName.toLowerCase();
   if(t==='input'||t==='select'||t==='textarea') return;
@@ -598,11 +678,13 @@ document.addEventListener('keydown',(e)=>{
   if(e.key==='Backspace'){ if(warmActive){ e.preventDefault(); $('wUndo').click(); } }
 });
 
-/* ================== Başlangıç ================== */
+/* Başlangıç */
 $('warmPanel').style.display = 'block';
 warmUpdateUI();
-computeNextRecommendation();
-refreshKPI();
+setRecoBadge('NONE');
+$('kStake').textContent='—';
+$('kUnit').textContent=String(unit);
+$('kBank').textContent=money(baseBank);
 })();
 </script>
 </body>
